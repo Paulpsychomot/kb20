@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#6f9fd8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0b1233" media="(prefers-color-scheme: dark)">
 <title>KB 20 min</title>
-<link id="touch-icon" rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20180%20180'%3E%3Cdefs%3E%3ClinearGradient%20id='s'%20x1='0'%20y1='0'%20x2='.35'%20y2='1'%3E%3Cstop%20offset='0'%20stop-color='%235f93d6'/%3E%3Cstop%20offset='.5'%20stop-color='%23a9cbe9'/%3E%3Cstop%20offset='1'%20stop-color='%23f2dfe8'/%3E%3C/linearGradient%3E%3ClinearGradient%20id='k'%20x1='0'%20y1='0'%20x2='1'%20y2='1'%3E%3Cstop%20offset='0'%20stop-color='%23ff9a6b'/%3E%3Cstop%20offset='1'%20stop-color='%23e8607f'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width='180'%20height='180'%20fill='url%28%23s%29'/%3E%3Ccircle%20cx='90'%20cy='90'%20r='62'%20fill='url%28%23k%29'/%3E%3C/svg%3E">
+<link id="touch-icon" rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20180%20180'%3E%3Cdefs%3E%3ClinearGradient%20id='s'%20x1='0'%20y1='0'%20x2='.35'%20y2='1'%3E%3Cstop%20offset='0'%20stop-color='%235f93d6'/%3E%3Cstop%20offset='.5'%20stop-color='%23a9cbe9'/%3E%3Cstop%20offset='1'%20stop-color='%23f2dfe8'/%3E%3C/linearGradient%3E%3ClinearGradient%20id='k'%20x1='0'%20y1='0'%20x2='0'%20y2='1'%3E%3Cstop%20offset='0'%20stop-color='%23ff9a6b'/%3E%3Cstop%20offset='1'%20stop-color='%23e8607f'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width='180'%20height='180'%20fill='url%28%23s%29'/%3E%3Cpolygon%20points='-6%2C142%2030%2C112%2056%2C128%2098%2C80%20122%2C98%20160%2C44%20186%2C44%20186%2C186%20-6%2C186'%20fill='url%28%23k%29'%20stroke-linejoin='round'/%3E%3Cpolyline%20points='-6%2C142%2030%2C112%2056%2C128%2098%2C80%20122%2C98%20160%2C44'%20fill='none'%20stroke='%23fff'%20stroke-width='8'%20stroke-linecap='round'%20stroke-linejoin='round'/%3E%3Ccircle%20cx='160'%20cy='44'%20r='9'%20fill='%23fff'/%3E%3C/svg%3E">
 <style>
 :root{
   --bg:rgba(255,255,255,.25); --card:rgba(255,255,255,.2); --text:#16294a; --muted:#51698c; --line:rgba(70,100,150,.16);
@@ -50,6 +50,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;min-he
 .ex .t{flex:1;min-width:0}
 .ex .name{font-weight:600}
 .ex .meta{color:var(--muted);font-size:14px;margin-top:2px}
+.mini{margin-top:6px;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:0 12px;font-weight:700;font-size:14px;min-height:44px;font-variant-numeric:tabular-nums}
 .ex .msg{font-size:13px;margin-top:4px;color:var(--accent)}
 .ex .msg.pain{color:var(--bad)}
 .load{background:var(--bg);border-radius:10px;padding:6px 10px;font-weight:800;min-height:44px;min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
@@ -127,19 +128,19 @@ const S={
   {id:"a1",name:"Swing deux mains",lad:KGS,def:20,n:15,step:2,fmt:n=>n+" reps"},
   {id:"a2",name:"Fente arrière, KB en rack",lad:KGS,def:12,n:8,step:1,fmt:n=>n+"/jambe"},
   {id:"a3",name:"Rowing en appui sur banc",lad:KGS,def:12,n:10,step:1,fmt:n=>n+"/bras"},
-  {id:"a4",name:"Hollow hold, KB bras tendus",lad:KGS,def:8,n:30,step:5,fmt:n=>n+" s"}]},
+  {id:"a4",name:"Hollow hold, KB bras tendus",dur:1,lad:KGS,def:8,n:30,step:5,fmt:n=>n+" s"}]},
  B:{name:"Bras & core",format:"Circuit 16 min · 3 à 4 tours",type:"circuit",ex:[
-  {id:"b1",name:"Clean & press",alt:"alternative : press demi-genou",lad:KGS,def:12,n:8,step:1,fmt:n=>n+"/bras"},
-  {id:"b2",name:"Curl marteau",lad:KGS,def:8,n:10,step:1,fmt:n=>n+"/bras"},
-  {id:"b3",name:"Extension triceps au-dessus de la tête",lad:KGS,def:12,n:10,step:1,fmt:n=>n+" reps"},
-  {id:"b4",name:"Suitcase hold",lad:KGS,def:12,n:30,step:5,fmt:n=>n+" s/côté"},
-  {id:"b5",name:"Planche avec pull-through",lad:KGS,def:8,n:30,step:5,fmt:n=>n+" s"}]},
+  {id:"b1",slot:50,name:"Clean & press",alt:"alternative : press demi-genou",lad:KGS,def:12,n:8,step:1,fmt:n=>n+"/bras"},
+  {id:"b2",slot:40,name:"Curl marteau",lad:KGS,def:8,n:10,step:1,fmt:n=>n+"/bras"},
+  {id:"b3",slot:30,name:"Extension triceps au-dessus de la tête",lad:KGS,def:12,n:10,step:1,fmt:n=>n+" reps"},
+  {id:"b4",name:"Suitcase hold",dur:1,sides:2,lad:KGS,def:12,n:30,step:5,fmt:n=>n+" s/côté"},
+  {id:"b5",name:"Planche avec pull-through",dur:1,lad:KGS,def:8,n:30,step:5,fmt:n=>n+" s"}]},
  C:{name:"Trail & stabilité",format:"Circuit 16 min · max de tours à rythme régulier",type:"circuit",ex:[
-  {id:"c1",name:"Soulevé de terre roumain sur une jambe",lad:KGS,def:12,n:8,step:1,fmt:n=>n+"/côté"},
-  {id:"c2",name:"Step-up, KB en rack ou suitcase",lad:KGS,def:12,n:10,step:1,fmt:n=>n+"/jambe"},
-  {id:"c3",name:"Turkish get-up",lad:KGS,def:8,n:2,step:0,fmt:n=>n+"/côté"},
-  {id:"c4",name:"Farmer carry, mains inversées à chaque passage",lad:["12+8","20+8","20+12"],def:"20+12",n:40,step:5,fmt:n=>n+" m"},
-  {id:"c5",name:"Dead bug",lad:null,def:null,n:10,step:2,fmt:n=>n+" reps"}]}
+  {id:"c1",slot:50,name:"Soulevé de terre roumain sur une jambe",lad:KGS,def:12,n:8,step:1,fmt:n=>n+"/côté"},
+  {id:"c2",slot:50,name:"Step-up, KB en rack ou suitcase",lad:KGS,def:12,n:10,step:1,fmt:n=>n+"/jambe"},
+  {id:"c3",slot:75,name:"Turkish get-up",lad:KGS,def:8,n:2,step:0,fmt:n=>n+"/côté"},
+  {id:"c4",slot:45,name:"Farmer carry, mains inversées à chaque passage",lad:["12+8","20+8","20+12"],def:"20+12",n:40,step:5,fmt:n=>n+" m"},
+  {id:"c5",slot:30,name:"Dead bug",lad:null,def:null,n:10,step:2,fmt:n=>n+" reps"}]}
 };
 const FB={easy:["😌","Facile"],good:["👍","Bien"],hard:["😤","Dur"],pain:["⚠️","Douleur"]};
 const MIN=16*60;
@@ -167,6 +168,7 @@ function exState(ex){
   return s;
 }
 const loadLabel=ex=>{const s=exState(ex);return ex.lad?(String(ex.lad[s.idx]).includes("+")?ex.lad[s.idx]+" kg":ex.lad[s.idx]+" kg"):"Poids du corps"};
+const durSec=ex=>ex.n+exState(ex).bonus*ex.step;
 const volLabel=ex=>{const s=exState(ex);return ex.fmt(ex.n+s.bonus*ex.step)};
 function nextLetter(){
   const last=DB.hist.length?DB.hist.slice().sort((a,b)=>a.ts-b.ts).pop().letter:null;
@@ -181,7 +183,7 @@ let finisher=false;
 let draft=null;             // fin de séance en cours
 
 /* ---------- Minuteur ---------- */
-const T={run:false,start:0,base:0,rounds:0,lastMin:-1,done:false,tick:null,wake:null};
+const T={durDone:-1,run:false,start:0,base:0,rounds:0,lastMin:-1,done:false,tick:null,wake:null};
 let actx=null;
 function beep(freq=880,dur=.18,vol=.4){
   try{
@@ -205,16 +207,26 @@ function tStart(){
   clearInterval(T.tick);T.tick=setInterval(tTick,250);tTick();
 }
 function tPause(){T.base=elapsed();T.run=false;clearInterval(T.tick);wakeOff();paintTimer()}
-function tReset(){T.run=false;T.base=0;T.lastMin=-1;T.done=false;T.rounds=0;clearInterval(T.tick);wakeOff();paintTimer()}
+function tReset(){T.run=false;T.base=0;T.lastMin=-1;T.durDone=-1;T.done=false;T.rounds=0;clearInterval(T.tick);wakeOff();paintTimer()}
+const slotSec=(ex,emom)=>emom?60:(ex.sides?ex.sides*durSec(ex):ex.dur?durSec(ex)+10:ex.slot);
+function segs(l){const emom=S[l].type==="emom";return S[l].ex.map(ex=>slotSec(ex,emom))}
+function where(l,e){            // position dans le cycle : n° de segment global, exercice, tour, temps écoulé dans le segment
+  const sg=segs(l),R=sg.reduce((a,b)=>a+b,0);
+  let t=e%R,i=0;while(i<sg.length-1&&t>=sg[i]){t-=sg[i];i++}
+  const round=Math.floor(e/R);
+  return{g:round*sg.length+i,i,round,t,len:sg[i],R};
+}
+function fullRounds(){return Math.floor(Math.min(elapsed(),MIN)/where(cur,0).R)}
 function tTick(){
   const e=elapsed();
   if(e>=MIN){T.base=MIN;T.run=false;T.done=true;clearInterval(T.tick);wakeOff();
     beep(1200,.7);setTimeout(()=>beep(1200,.7),900);buzz([300,150,300,150,600]);paintTimer();return}
-  const m=Math.floor(e/60);
-  if(S[cur].type==="emom"&&m!==T.lastMin){T.lastMin=m;beep(1000,.3);buzz(200)}
-  else if(S[cur].type==="emom"&&m===T.lastMin){
-    const left=Math.ceil(60-(e%60));
+  const w=where(cur,e),ex=S[cur].ex[w.i];
+  if(w.g!==T.lastMin){T.lastMin=w.g;beep(1000,.3);buzz(200)}
+  else{
+    const left=Math.ceil(w.len-w.t);
     if(left<=3&&T.lastBeepSec!==Math.floor(e)){T.lastBeepSec=Math.floor(e);beep(600,.08,.25)}
+    if(ex.dur&&T.durDone!==w.g&&w.t>=durSec(ex)){T.durDone=w.g;beep(1400,.25);setTimeout(()=>beep(1400,.4),320);buzz([200,100,300])}
   }
   paintTimer();
 }
@@ -222,24 +234,15 @@ document.addEventListener("visibilitychange",()=>{if(!document.hidden&&T.run){wa
 
 function paintTimer(){
   const box=$("#timer");if(!box)return;
-  const s=S[cur],e=Math.min(elapsed(),MIN),emom=s.type==="emom";
-  let clock,line="";
-  if(emom){
-    const m=Math.min(Math.floor(e/60),15),ex=s.ex[m%4];
-    clock=mmss(T.done?0:60-(e%60));
-    if(T.lastMin<0&&!T.done)line="Prêt · minute 1";
-    else if(T.done)line="Terminé 🎉";
-    else line=`Tour ${Math.floor(m/4)+1}/4 · min ${m+1}/16<small>${esc(ex.name)} — ${loadLabel(ex)} · ${volLabel(ex)}</small>`;
-    document.querySelectorAll(".ex").forEach((el,i)=>el.classList.toggle("now",T.lastMin>=0&&!T.done&&i===m%4));
-  }else{
-    clock=mmss(MIN-e);
-    line=T.done?"Terminé 🎉":(T.lastMin<0?"Prêt · 16 min":"Rythme régulier");
-  }
-  $("#clock").textContent=clock;
-  $("#curline").innerHTML=line;
+  const s=S[cur],e=Math.min(elapsed(),MIN),w=where(cur,e),ex=s.ex[w.i];
+  const started=T.lastMin>=0;
+  $("#clock").textContent=T.done?"00:00":mmss(started?w.len-w.t:slotSec(s.ex[0],s.type==="emom"));
+  $("#curline").innerHTML=T.done?"Terminé 🎉":!started?`Prêt · enchaînement automatique<small>16 min · ${esc(s.ex[0].name)} en premier</small>`:
+    `Tour ${w.round+1} · exercice ${w.i+1}/${s.ex.length}<small>${esc(ex.name)} — ${loadLabel(ex)} · ${volLabel(ex)}${ex.dur?` · 🔔 bip à ${durSec(ex)} s`:""}</small>`
+    +`<small>Prochain : ${esc(s.ex[(w.i+1)%s.ex.length].name)} · reste ${mmss(MIN-e)}</small>`;
+  document.querySelectorAll(".ex").forEach((el,i)=>el.classList.toggle("now",started&&!T.done&&i===w.i));
   $("#bar").style.width=(e/MIN*100)+"%";
-  $("#go").textContent=T.run?"Pause":(T.lastMin>=0&&!T.done?"Reprendre":"Démarrer");
-  const r=$("#rounds");if(r)r.textContent=T.rounds;
+  $("#go").textContent=T.run?"Pause":(started&&!T.done?"Reprendre":"Démarrer");
 }
 
 /* ---------- Écran Aujourd'hui ---------- */
@@ -260,7 +263,7 @@ function renderToday(){
   <div class="card">${s.ex.map((ex,i)=>{const st=exState(ex);return `
     <div class="ex"><div class="n">${s.type==="emom"?i+1:"•"}</div>
       <div class="t"><div class="name">${ex.name}</div>
-        <div class="meta">${volLabel(ex)}${ex.alt?" · "+ex.alt:""}</div>
+        <div class="meta">${volLabel(ex)}${ex.alt?" · "+ex.alt:""}${s.type==="emom"?"":" · "+slotSec(ex,false)+" s"}</div>
         ${st.msg?`<div class="msg ${st.pain?"pain":""}">${esc(st.msg)}</div>`:""}</div>
       ${ex.lad?`<button class="load" data-ex="${ex.id}" aria-label="Changer la charge">${loadLabel(ex)}</button>`:`<div class="load" style="opacity:.6">PdC</div>`}
     </div>`}).join("")}
@@ -271,7 +274,6 @@ function renderToday(){
     <div class="clock" id="clock">16:00</div>
     <div class="cur" id="curline"></div>
     <div class="bar"><i id="bar"></i></div>
-    ${s.type==="emom"?"":`<div class="rounds"><button data-r="-1">−</button><div><b id="rounds">0</b><div class="tiny">tours</div></div><button data-r="1">+</button></div>`}
     <div class="row"><button class="btn" id="go">Démarrer</button><button class="btn sec small" id="rst" style="width:auto">↺</button></div>
   </div>
 
@@ -391,11 +393,10 @@ document.addEventListener("click",e=>{
   if(d.pick){if(T.lastMin>=0&&!T.done&&!confirm("Changer de séance remet le minuteur à zéro. Continuer ?"))return;tReset();cur=d.pick;renderToday();return}
   if(d.ex){const ex=Object.values(S).flatMap(x=>x.ex).find(x=>x.id===d.ex),st=exState(ex);
     st.idx=(st.idx+1)%ex.lad.length;st.bonus=0;st.msg="";save();renderToday();return}
-  if(d.r){T.rounds=Math.max(0,T.rounds+Number(d.r));paintTimer();return}
   if(t.id==="go"){T.run?tPause():tStart();return}
   if(t.id==="rst"){tReset();return}
   if(t.id==="fin"){finisher=!finisher;t.classList.toggle("on",finisher);t.querySelector(".box").textContent=finisher?"✓":"";return}
-  if(t.id==="end"){if(T.run)tPause();draft={fb:{},g:null,note:""};view="finish";render();return}
+  if(t.id==="end"){if(T.run)tPause();T.rounds=fullRounds();draft={fb:{},g:null,note:""};view="finish";render();return}
   if(t.id==="back"){view="main";render();return}
   if(d.fb){draft.fb[d.fb]=d.f;t.parentNode.querySelectorAll("button").forEach(b=>b.classList.toggle("on",b===t));return}
   if(d.g){draft.g=Number(d.g);t.parentNode.querySelectorAll("button").forEach(b=>b.classList.toggle("on",b===t));return}
@@ -414,8 +415,13 @@ try{
   const c=document.createElement("canvas");c.width=c.height=180;const g=c.getContext("2d");
   let bg=g.createLinearGradient(0,0,63,180);bg.addColorStop(0,"#5f93d6");bg.addColorStop(.5,"#a9cbe9");bg.addColorStop(1,"#f2dfe8");
   g.fillStyle=bg;g.fillRect(0,0,180,180);
-  let kb=g.createLinearGradient(28,28,152,152);kb.addColorStop(0,"#ff9a6b");kb.addColorStop(1,"#e8607f");
-  g.fillStyle=kb;g.beginPath();g.arc(90,90,62,0,Math.PI*2);g.fill();
+  const P=[[-6,142],[30,112],[56,128],[98,80],[122,98],[160,44]];
+  const path=()=>{g.beginPath();P.forEach(([x,y],i)=>i?g.lineTo(x,y):g.moveTo(x,y))};
+  let kb=g.createLinearGradient(0,44,0,186);kb.addColorStop(0,"#ff9a6b");kb.addColorStop(1,"#e8607f");
+  g.lineJoin="round";g.lineCap="round";
+  path();g.lineTo(186,44);g.lineTo(186,186);g.lineTo(-6,186);g.closePath();g.fillStyle=kb;g.fill();
+  path();g.strokeStyle="#fff";g.lineWidth=8;g.stroke();
+  g.fillStyle="#fff";g.beginPath();g.arc(160,44,9,0,Math.PI*2);g.fill();
   $("#touch-icon").href=c.toDataURL("image/png");
 }catch(e){}
 
