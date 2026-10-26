@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#6f9fd8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0b1233" media="(prefers-color-scheme: dark)">
 <title>KB 20 min</title>
-<link id="touch-icon" rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' fill='%23ff6a1a'/%3E%3Cpath d='M62 80a28 28 0 0 1 56 0' fill='none' stroke='%23fff' stroke-width='12' stroke-linecap='round'/%3E%3Ccircle cx='90' cy='116' r='34' fill='%23fff'/%3E%3C/svg%3E">
+<link id="touch-icon" rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20180%20180'%3E%3Cdefs%3E%3ClinearGradient%20id='s'%20x1='0'%20y1='0'%20x2='.35'%20y2='1'%3E%3Cstop%20offset='0'%20stop-color='%235f93d6'/%3E%3Cstop%20offset='.5'%20stop-color='%23a9cbe9'/%3E%3Cstop%20offset='1'%20stop-color='%23f2dfe8'/%3E%3C/linearGradient%3E%3ClinearGradient%20id='k'%20x1='0'%20y1='0'%20x2='1'%20y2='1'%3E%3Cstop%20offset='0'%20stop-color='%23ff9a6b'/%3E%3Cstop%20offset='1'%20stop-color='%23e8607f'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width='180'%20height='180'%20fill='url%28%23s%29'/%3E%3Ccircle%20cx='90'%20cy='90'%20r='62'%20fill='url%28%23k%29'/%3E%3C/svg%3E">
 <style>
 :root{
   --bg:rgba(255,255,255,.25); --card:rgba(255,255,255,.2); --text:#16294a; --muted:#51698c; --line:rgba(70,100,150,.16);
@@ -412,9 +412,10 @@ document.addEventListener("click",e=>{
 /* Icône tactile PNG générée (iOS ignore souvent les SVG) */
 try{
   const c=document.createElement("canvas");c.width=c.height=180;const g=c.getContext("2d");
-  g.fillStyle="#ff6a1a";g.fillRect(0,0,180,180);
-  g.strokeStyle="#fff";g.lineWidth=12;g.lineCap="round";g.beginPath();g.arc(90,80,28,Math.PI,0);g.stroke();
-  g.fillStyle="#fff";g.beginPath();g.arc(90,116,34,0,Math.PI*2);g.fill();
+  let bg=g.createLinearGradient(0,0,63,180);bg.addColorStop(0,"#5f93d6");bg.addColorStop(.5,"#a9cbe9");bg.addColorStop(1,"#f2dfe8");
+  g.fillStyle=bg;g.fillRect(0,0,180,180);
+  let kb=g.createLinearGradient(28,28,152,152);kb.addColorStop(0,"#ff9a6b");kb.addColorStop(1,"#e8607f");
+  g.fillStyle=kb;g.beginPath();g.arc(90,90,62,0,Math.PI*2);g.fill();
   $("#touch-icon").href=c.toDataURL("image/png");
 }catch(e){}
 
