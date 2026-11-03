@@ -548,9 +548,10 @@ document.addEventListener("change",e=>{if(e.target.id==="race"){DB.race=e.target
 /* Icône tactile PNG générée (iOS ignore souvent les SVG) */
 try{
   const c=document.createElement("canvas");c.width=c.height=180;const g=c.getContext("2d");
-  g.fillStyle="#0A0A0B";g.fillRect(0,0,180,180);g.fillStyle="#FF2D6F";
-  const H=[56,40,16,48,62,92,16],k=180/160,w=10*k,gap=6*k,x0=(180-(7*w+6*gap))/2,b=180-34*k;
-  H.forEach((h,i)=>{g.beginPath();g.roundRect(x0+i*(w+gap),b-h*k,w,h*k,w/2);g.fill()});
+  g.fillStyle="#17181C";g.fillRect(0,0,180,180);
+  const H=[63,45,54,70,104,40,18],C=["#E8708F","#E8708F","#5FB4E0","#5FB4E0","#5FB4E0","#E6C65E","#7E8B9C"];
+  const w=12,gap=7,x0=(180-(7*w+6*gap))/2,b=180-38;
+  H.forEach((h,i)=>{g.fillStyle=C[i];g.beginPath();g.roundRect(x0+i*(w+gap),b-h,w,h,w/2);g.fill()});
   document.querySelector("#touch-icon").href=c.toDataURL("image/png");
 }catch(e){}
 
