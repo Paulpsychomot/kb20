@@ -6,11 +6,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0A0A0B">
 <meta name="apple-mobile-web-app-title" content="Prépa">
-<meta name="theme-color" content="#6f9fd8" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0b1233" media="(prefers-color-scheme: dark)">
 <title>Prépa</title>
-<link id="touch-icon" rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20180%20180'%3E%3Cdefs%3E%3ClinearGradient%20id='s'%20x1='0'%20y1='0'%20x2='.35'%20y2='1'%3E%3Cstop%20offset='0'%20stop-color='%235f93d6'/%3E%3Cstop%20offset='.5'%20stop-color='%23a9cbe9'/%3E%3Cstop%20offset='1'%20stop-color='%23f2dfe8'/%3E%3C/linearGradient%3E%3ClinearGradient%20id='k'%20x1='0'%20y1='0'%20x2='0'%20y2='1'%3E%3Cstop%20offset='0'%20stop-color='%23ff9a6b'/%3E%3Cstop%20offset='1'%20stop-color='%23e8607f'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width='180'%20height='180'%20fill='url%28%23s%29'/%3E%3Cpolygon%20points='-6%2C142%2030%2C112%2056%2C128%2098%2C80%20122%2C98%20160%2C44%20186%2C44%20186%2C186%20-6%2C186'%20fill='url%28%23k%29'%20stroke-linejoin='round'/%3E%3Cpolyline%20points='-6%2C142%2030%2C112%2056%2C128%2098%2C80%20122%2C98%20160%2C44'%20fill='none'%20stroke='%23fff'%20stroke-width='8'%20stroke-linecap='round'%20stroke-linejoin='round'/%3E%3Ccircle%20cx='160'%20cy='44'%20r='9'%20fill='%23fff'/%3E%3C/svg%3E">
+<link id="touch-icon" rel="apple-touch-icon" href="">
 <style>
 :root{
   --bg:rgba(255,255,255,.25); --card:rgba(255,255,255,.2); --text:#16294a; --muted:#51698c; --line:rgba(70,100,150,.16);
@@ -532,16 +531,10 @@ document.addEventListener("change",e=>{if(e.target.id==="race"){DB.race=e.target
 /* Icône tactile PNG générée (iOS ignore souvent les SVG) */
 try{
   const c=document.createElement("canvas");c.width=c.height=180;const g=c.getContext("2d");
-  let bg=g.createLinearGradient(0,0,63,180);bg.addColorStop(0,"#5f93d6");bg.addColorStop(.5,"#a9cbe9");bg.addColorStop(1,"#f2dfe8");
-  g.fillStyle=bg;g.fillRect(0,0,180,180);
-  const P=[[-6,142],[30,112],[56,128],[98,80],[122,98],[160,44]];
-  const path=()=>{g.beginPath();P.forEach(([x,y],i)=>i?g.lineTo(x,y):g.moveTo(x,y))};
-  let kb=g.createLinearGradient(0,44,0,186);kb.addColorStop(0,"#ff9a6b");kb.addColorStop(1,"#e8607f");
-  g.lineJoin="round";g.lineCap="round";
-  path();g.lineTo(186,44);g.lineTo(186,186);g.lineTo(-6,186);g.closePath();g.fillStyle=kb;g.fill();
-  path();g.strokeStyle="#fff";g.lineWidth=8;g.stroke();
-  g.fillStyle="#fff";g.beginPath();g.arc(160,44,9,0,Math.PI*2);g.fill();
-  $("#touch-icon").href=c.toDataURL("image/png");
+  g.fillStyle="#0A0A0B";g.fillRect(0,0,180,180);g.fillStyle="#FF2D6F";
+  const H=[56,40,16,48,62,92,16],k=180/160,w=10*k,gap=6*k,x0=(180-(7*w+6*gap))/2,b=180-34*k;
+  H.forEach((h,i)=>{g.beginPath();g.roundRect(x0+i*(w+gap),b-h*k,w,h*k,w/2);g.fill()});
+  document.querySelector("#touch-icon").href=c.toDataURL("image/png");
 }catch(e){}
 
 render();
