@@ -418,9 +418,7 @@ function renderToday(){
     <div class="scard"><div class="bigl">${cur}</div><div><div class="fl">${fam.label}${done?" · faite":cur===planned?" · prévue":""}</div><div class="nm">${a.name.replace(" · ","<br>")}</div></div></div>
     ${seg}
     ${miss&&miss!==cur?`<div class="card" style="margin-top:12px"><b>${ACT[miss].name}</b> n’a pas encore été faite cette semaine.<button class="btn small fam-btn" data-pick="${miss}" style="margin-top:10px">La faire aujourd’hui</button></div>`:""}
-    <div class="card" style="margin-top:12px"><div class="mono" style="color:var(--text)">Phase ${PH[ph.k][0]}${ph.w!=null?` · course dans ${ph.w} sem.`:""}</div><div class="tiny" style="margin-top:6px">${PH[ph.k][1]}</div></div>
-    <h2>Essentiels ${ess} / 3 · courses +${bonus}</h2>
-    <div class="rows">${ESSENTIAL.map((l,i)=>{const ok=wk.some(x=>x.letter===l);return `<div class="row2" style="--fc:${famille(l).c}"><span class="num">${pad(i+1)}</span><div class="t name">${ESSN[l]}</div><span class="st ${ok?"ok":""}">${ok?"FAIT":"À FAIRE"}</span></div>`}).join("")}</div>`;
+    <div class="card" style="margin-top:12px"><div class="mono" style="color:var(--text)">Phase ${PH[ph.k][0]}${ph.w!=null?` · course dans ${ph.w} sem.`:""}</div><div class="tiny" style="margin-top:6px">${PH[ph.k][1]}</div></div>`;
   let pill="";
   if(a.kind==="gym"){
     const exs=exList(cur),home=DB.loc==="home";
