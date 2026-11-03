@@ -56,6 +56,8 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;min-he
 .wd.sel .ltr{color:var(--wc)}
 
 /* carte séance */
+.jobdone{margin-top:12px;border:1.5px solid var(--fc)}
+.jobdone .jd{font-size:28px;font-weight:800;color:var(--fc);letter-spacing:-.01em}
 .scard{background:var(--fc);color:var(--fi);border-radius:22px;padding:18px;display:flex;align-items:flex-end;gap:14px}
 .bigl{font-size:104px;font-weight:900;line-height:.78;letter-spacing:-5px;padding-bottom:4px}
 .scard .fl{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;opacity:.8}
@@ -403,6 +405,8 @@ function renderToday(){
   if(!cur)cur=planFor(new Date());
   const a=ACT[cur],ph=phase(),now=new Date(),planned=planFor(now),fam=famille(cur);
   const done=DB.hist.some(h=>h.date===ymd(now));
+  const eqT=l=>l==="Y"?"Z":l==="T"||l==="F"?"S":l;
+  const jobDone=DB.hist.some(h=>h.date===ymd(now)&&eqT(h.letter)===eqT(cur));
   const miss=missed();
   const wk=weekHist(),bonus=wk.filter(x=>!ESSENTIAL.includes(x.letter)&&x.letter!=="M").length;
   const ess=ESSENTIAL.filter(l=>wk.some(x=>x.letter===l)).length;
@@ -417,6 +421,7 @@ function renderToday(){
     ${weekBars(planned)}
     <div class="scard"><div class="bigl">${cur}</div><div><div class="fl">${fam.label}${done?" · faite":cur===planned?" · prévue":""}</div><div class="nm">${a.name.replace(" · ","<br>")}</div></div></div>
     ${seg}
+    ${jobDone?`<div class="card jobdone"><div class="jd">Job done</div><div class="sub">Séance validée aujourd’hui. Repose-toi, c’est du solide.</div></div>`:""}
     ${miss&&miss!==cur?`<div class="card" style="margin-top:12px"><b>${ACT[miss].name}</b> n’a pas encore été faite cette semaine.<button class="btn small fam-btn" data-pick="${miss}" style="margin-top:10px">La faire aujourd’hui</button></div>`:""}
     <div class="card" style="margin-top:12px"><div class="mono" style="color:var(--text)">Phase ${PH[ph.k][0]}${ph.w!=null?` · course dans ${ph.w} sem.`:""}</div><div class="tiny" style="margin-top:6px">${PH[ph.k][1]}</div></div>`;
   let pill="";
@@ -445,7 +450,7 @@ function renderToday(){
       <div class="chrow"><button class="btn small fam-btn" id="chgo">Démarrer</button><button class="btn sec small" id="chrst">↺</button></div></div>`;
     }
   }
-  h+=`<div class="cta"><button class="btn" id="end"><span>Terminer la séance</span>${pill}</button></div></div>`;
+  h+=`<div class="cta"><button class="btn" id="end"><span>${jobDone?"Valider une autre séance":"Terminer la séance"}</span>${pill}</button></div></div>`;
   $("#app").innerHTML=h;
   chPaint();
 }
