@@ -546,7 +546,7 @@ function renderCal(){
   <div class="card"><label><div class="tiny">VMA en km/h (facultatif)</div><input class="inp" id="vma" type="number" inputmode="decimal" step="0.1" placeholder="ex. 15" value="${DB.vma||""}"></label>
     <div class="tiny" style="margin-top:8px">Test simple : 6 min à fond sur piste, VMA ≈ distance en mètres ÷ 100 (approximation). Elle règle les vitesses du fractionné.</div></div>
   <h2>Données</h2>
-  <div class="row"><button class="btn sec small" id="exp">Copier l’export</button><button class="btn sec small" id="rz" style="color:#FF6B5E">Réinitialiser</button></div>
+  <div class="row"><button class="btn sec small" id="exp">Copier l’export</button><button class="btn sec small" id="imp">Importer</button><button class="btn sec small" id="rz" style="color:#FF6B5E">Réinitialiser</button></div>
   <p class="tiny">Les données restent sur cet iPhone (stockage local de Safari).</p>`;
 }
 
@@ -585,6 +585,7 @@ document.addEventListener("click",e=>{
   if(d.m){calM+=Number(d.m);if(calM<0){calM=11;calY--}if(calM>11){calM=0;calY++}render();return}
   if(d.day){selDay=selDay===d.day?null:d.day;renderCal();return}
   if(t.id==="exp"){const j=JSON.stringify(DB);(navigator.clipboard?navigator.clipboard.writeText(j):Promise.reject()).then(()=>alert("Export copié."),()=>prompt("Copie ce texte :",j));return}
+  if(t.id==="imp"){const j=prompt("Colle ici l’export :");if(!j)return;try{const o=JSON.parse(j);if(!o||!Array.isArray(o.hist))throw 0;DB=Object.assign({hist:[],st:{},loc:"gym",race:null,vma:null},o);save();selDay=null;cur=null;render();alert("Import terminé : "+DB.hist.length+" séances.")}catch(err){alert("Export invalide, rien n’a été modifié.")}return}
   if(t.id==="rz"){if(confirm("Effacer tout l’historique et les charges ?")){DB={hist:[],st:{},loc:"gym",race:null,vma:null};save();selDay=null;cur=null;render()}return}
 });
 document.addEventListener("change",e=>{if(e.target.id==="race"){DB.race=e.target.value||null;save();renderCal()}
