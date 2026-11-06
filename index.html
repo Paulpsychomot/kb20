@@ -171,12 +171,13 @@ const ACT={
   Y:{name:"Séance type Hyrox",short:"Hyrox",kind:"run",sub:"Mardi : Hyrox en salle avec ton coach"},
   T:{name:"Séance de course · trail",short:"Trail",kind:"run",sub:"Samedi : sortie longue"},
   F:{name:"Fractionné",short:"Frac.",kind:"run",sub:"Qualité : une séance dure par semaine"},
+  V:{name:"Test VMA",short:"VMA",kind:"run",sub:"Test des 6 minutes pour calculer ta VMA"},
   R:{name:"Rugby",short:"Rugby",kind:"run",sub:"1 h de course / cardio"},
   M:{name:"Repos",short:"Repos",kind:"light",sub:"Récupération · mobilité facultative"}
 };
 const LEG={A:"Jambes & core (KB 20 min)",B:"Bras & core (KB 20 min)",C:"Trail & stabilité (KB 20 min)"};
 const PLAN={1:"L",2:"Z",3:"M",4:"R",5:"H",6:"T",0:"M"};      // jour de semaine → séance prévue
-const TXT={L:"Renfo salle ou KB",Z:"Course ou Hyrox",M:"Repos",R:"Rugby",H:"Renfo salle ou maison",T:"Sortie longue",F:"Fractionné"};
+const TXT={L:"Renfo salle ou KB",Z:"Course ou Hyrox",M:"Repos",R:"Rugby",H:"Renfo salle ou maison",T:"Sortie longue",F:"Fractionné",V:"Test VMA"};
 const LBL={L:"L",Z:"Z/Y",R:"R",H:"H",T:"T",F:"F"};
 function isoWeek(d){const x=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())),n=x.getUTCDay()||7;x.setUTCDate(x.getUTCDate()+4-n);return Math.ceil(((x-Date.UTC(x.getUTCFullYear(),0,1))/864e5+1)/7)}
 /* samedi : fractionné tant que la course est loin (phase Base), sortie longue ensuite */
@@ -208,11 +209,11 @@ const SES={
 const ALLEX=Object.fromEntries(Object.values(SES).flatMap(x=>[...x.gym,...x.home]).map(e=>[e.id,e]));
 const FAT={fresh:"Frais",ok:"Normal",tired:"Fatigué",pain:"Douleur"};
 const FAM={force:{c:"#E8708F",ink:"#1E0F14",label:"FORCE"},endu:{c:"#5FB4E0",ink:"#0C1A24",label:"ENDURANCE"},rugby:{c:"#E6C65E",ink:"#201A08",label:"RUGBY"},repos:{c:"#7E8B9C",ink:"#101418",label:"REPOS"}};
-const FAMOF={L:"force",H:"force",A:"force",B:"force",C:"force",Z:"endu",Y:"endu",T:"endu",F:"endu",R:"rugby",M:"repos"};
+const FAMOF={L:"force",H:"force",A:"force",B:"force",C:"force",Z:"endu",Y:"endu",T:"endu",F:"endu",V:"endu",R:"rugby",M:"repos"};
 const famille=code=>FAM[FAMOF[code]||"force"];
 const famStyle=code=>{const f=famille(code);return `--fc:${f.c};--fi:${f.ink}`};
 const FB={easy:"Facile",good:"Bien",hard:"Dur",pain:"Douleur"};
-const DEFDUR={Z:50,Y:50,T:120,F:60,R:60,M:15};
+const DEFDUR={Z:50,Y:50,T:120,F:60,V:45,R:60,M:15};
 
 const FRAC=[
   {n:10,work:"30 s",pct:105,rec:"30 s de trot lent",name:"30 / 30"},
@@ -237,6 +238,7 @@ function runLines(l,ph){
     if(ph.k==="aff")return["Échauffement 15 min en footing + gammes","4 à 6 × 2 min à allure course, récup 2 min : juste pour garder les jambes vives","Retour au calme 10 min"];
     return fracBase();
   }
+  if(l==="V")return["Échauffement 15 à 20 min en footing progressif + 3 accélérations de 20 s, puis 5 min de récupération","Test : cours 6 minutes le plus loin possible, à allure régulière (ne pars pas trop vite), sur terrain plat ou sur piste","Note la distance parcourue (montre ou piste) : VMA en km/h = distance en mètres ÷ 100","Retour au calme 10 min. Prévois une séance facile la veille.","Entre la distance en validant la séance : l’app calcule ta VMA et met à jour les vitesses du fractionné."];
   if(l==="R")return["1 h de course / cardio avec l’équipe","Pas de jambes lourdes la veille ni le jour même","Note l’intensité (RPE) pour ajuster la fin de semaine"];
   if(l==="T"){
     if(ph.k==="spe")return["Sortie longue 3 à 5 h avec un dénivelé proche de ta course","Travaille la nutrition (60–90 g de glucides/h) et les descentes","Option : dos à dos, samedi long + dimanche 1 h – 1 h 30 facile"];
@@ -397,7 +399,7 @@ const numList=lines=>`<div class="rows">${lines.map((t,i)=>`<div class="row2"><s
 function weekBars(planned){
   const ws=weekStart(new Date()),todayS=ymd(new Date());
   const by={};DB.hist.forEach(h=>(by[h.date]=by[h.date]||[]).push(h));
-  const eq=l=>l==="Y"?"Z":l==="T"||l==="F"?"S":l;                    // variantes d'une même case
+  const eq=l=>l==="Y"?"Z":l==="T"||l==="F"||l==="V"?"S":l;                    // variantes d'une même case
   let selIdx=-1;const days=[];
   for(let k=0;k<7;k++){const d=new Date(ws);d.setDate(d.getDate()+k);const key=ymd(d),hs=by[key]||[];
     days.push({key,hs,l:hs.length?hs[0].letter:planFor(d)})}
@@ -412,7 +414,7 @@ function renderToday(){
   if(!cur)cur=planFor(new Date());
   const a=ACT[cur],ph=phase(),now=new Date(),planned=planFor(now),fam=famille(cur);
   const done=DB.hist.some(h=>h.date===ymd(now));
-  const eqT=l=>l==="Y"?"Z":l==="T"||l==="F"?"S":l;
+  const eqT=l=>l==="Y"?"Z":l==="T"||l==="F"||l==="V"?"S":l;
   const jobDone=DB.hist.some(h=>h.date===ymd(now)&&eqT(h.letter)===eqT(cur));
   const miss=missed();
   const wk=weekHist(),bonus=wk.filter(x=>!ESSENTIAL.includes(x.letter)&&x.letter!=="M").length;
@@ -421,7 +423,7 @@ function renderToday(){
   const seg=a.kind==="gym"
     ?`<div class="seg"><button data-loc="gym" class="${DB.loc!=="home"?"on":""}">Salle</button><button data-loc="home" class="${DB.loc==="home"?"on":""}">Maison (KB)</button></div>`
     :cur==="Z"||cur==="Y"?`<div class="seg"><button data-pick="Z" class="${cur==="Z"?"on":""}">Course</button><button data-pick="Y" class="${cur==="Y"?"on":""}">Hyrox</button></div>`
-    :cur==="T"||cur==="F"?`<div class="seg"><button data-pick="F" class="${cur==="F"?"on":""}">Fractionné</button><button data-pick="T" class="${cur==="T"?"on":""}">Sortie longue</button></div>`:"";
+    :cur==="T"||cur==="F"||cur==="V"?`<div class="seg"><button data-pick="F" class="${cur==="F"?"on":""}">Fractionné</button><button data-pick="T" class="${cur==="T"?"on":""}">Sortie longue</button><button data-pick="V" class="${cur==="V"?"on":""}">Test VMA</button></div>`:"";
   const ESSN={L:"Renfo 1",H:"Renfo 2",R:"Rugby"};
   let h=`<div class="fam" style="${famStyle(cur)}">
     <div class="topline mono"><span>${DOW[now.getDay()]} ${now.getDate()} ${MON[now.getMonth()]}</span><span>PHASE ${PH[ph.k][0].toUpperCase()}${jx!=null&&jx>=0?` · J-${jx}`:""}</span></div>
@@ -484,7 +486,7 @@ function renderFinish(){
     const dur=CH.base+(CH.run?(Date.now()-CH.start)/1000:0);
     h+=`<div class="card"><div class="row" style="gap:10px">
       <label style="flex:1"><div class="tiny">Durée (min)</div><input class="inp" id="f-dur" type="number" inputmode="decimal" value="${dur>=60?Math.round(dur/60):DEFDUR[cur]}"></label>
-      ${cur==="Y"?"":`<label style="flex:1"><div class="tiny">Distance (km)</div><input class="inp" id="f-km" type="number" inputmode="decimal" placeholder="—"></label>`}
+      ${cur==="V"?`<label style="flex:1"><div class="tiny">Distance en 6 min (m)</div><input class="inp" id="f-vd" type="number" inputmode="numeric" placeholder="ex. 1500"></label>`:cur==="Y"?"":`<label style="flex:1"><div class="tiny">Distance (km)</div><input class="inp" id="f-km" type="number" inputmode="decimal" placeholder="—"></label>`}
       ${cur==="T"||cur==="Z"||cur==="F"?`<label style="flex:1"><div class="tiny">D+ (m)</div><input class="inp" id="f-dp" type="number" inputmode="numeric" placeholder="—"></label>`:""}</div></div>
     <h2>Intensité ressentie (1 à 10)</h2>
     <div class="card"><div class="rpe">${[1,2,3,4,5,6,7,8,9,10].map(n=>`<button data-rpe="${n}" class="${d.rpe===n?"on":""}">${n}</button>`).join("")}</div>
@@ -506,8 +508,11 @@ function validate(){
     Object.assign(entry,{fb:d.fb,g:d.g,loc:"home",loads:Object.fromEntries(exs.map(e=>[e.id,loadLabel(e)]))});
   }else if(a.kind==="run"){
     Object.assign(entry,{dur:num($("#f-dur")&&$("#f-dur").value),km:num($("#f-km")&&$("#f-km").value),dplus:num($("#f-dp")&&$("#f-dp").value),rpe:d.rpe});
+    if(cur==="V"){const m=num($("#f-vd")&&$("#f-vd").value);
+      if(m&&m>=600&&m<=2500){entry.vma=Math.round(m/10)/10;entry.km=null;DB.vma=entry.vma}}
   }
   DB.hist.push(entry);save();
+  if(entry.vma)setTimeout(()=>alert("Ta VMA : "+String(entry.vma).replace(".",",")+" km/h. Les vitesses du fractionné sont mises à jour."),50);
   chReset();draft=null;cur=null;backDate=null;addOpen=false;view="main";tab="cal";
   const n=fromYmd(date);calY=n.getFullYear();calM=n.getMonth();selDay=date;
   render();
@@ -518,7 +523,7 @@ function detailOf(h){
   const a=ACT[h.letter],name=a?a.name:(LEG[h.letter]||h.letter);
   const x=[];
   if(h.dur)x.push(h.dur+" min");if(h.km)x.push(h.km+" km");if(h.dplus)x.push(h.dplus+" m D+");
-  if(h.rpe)x.push("RPE "+h.rpe);if(h.g)x.push("global "+h.g+"/5");if(h.loc==="home")x.push("maison KB");if(h.fat)x.push("fatigue : "+FAT[h.fat].toLowerCase());
+  if(h.vma)x.push("VMA "+String(h.vma).replace(".",",")+" km/h");if(h.rpe)x.push("RPE "+h.rpe);if(h.g)x.push("global "+h.g+"/5");if(h.loc==="home")x.push("maison KB");if(h.fat)x.push("fatigue : "+FAT[h.fat].toLowerCase());
   const fb=h.fb?Object.entries(h.fb).filter(([id])=>ALLEX[id]).map(([id,f])=>`${esc(ALLEX[id].name.split(/[,(]/)[0].trim())} : ${FB[f].toLowerCase()}`).join(" · "):"";
   return `<div><b>${esc(name)}</b>${x.length?" · "+x.join(" · "):""}${fb?`<div class="tiny">${fb}</div>`:""}${h.note?`<div class="tiny">Note : ${esc(h.note)}</div>`:""}</div>`;
 }
@@ -542,7 +547,7 @@ function renderCal(){
     detail=`<h2>${fromYmd(selDay).toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})}</h2><div class="card detail">`+
       (hs.length?hs.map(detailOf).join(""):`<div class="tiny">${selDay>=today?"Prévu : "+TXT[planFor(fromYmd(selDay))]+".":"Aucune séance ce jour-là."}</div>`)+`</div>`+
       (selDay<=today?`<button class="btn sec small" data-addpast="1" style="margin-top:10px;justify-content:center">${addOpen?"Annuler":"+ Ajouter une séance ce jour-là"}</button>`+
-        (addOpen?`<div class="addp">${["L","H","Z","Y","F","T","R"].map(l=>`<button class="btn sec small" data-bf="${l}" style="justify-content:center;--fc:${famille(l).c}">${ACT[l].short||ACT[l].name}</button>`).join("")}</div>`:""):"");
+        (addOpen?`<div class="addp">${["L","H","Z","Y","F","T","V","R"].map(l=>`<button class="btn sec small" data-bf="${l}" style="justify-content:center;--fc:${famille(l).c}">${ACT[l].short||ACT[l].name}</button>`).join("")}</div>`:""):"");
   }
   const p=phase();
   $("#app").innerHTML=`<h1>Calendrier</h1>
@@ -595,6 +600,8 @@ document.addEventListener("click",e=>{
   if(d.g){draft.g=Number(d.g);t.parentNode.querySelectorAll("button").forEach(b=>b.classList.toggle("on",b===t));return}
   if(d.rpe){draft.rpe=Number(d.rpe);t.parentNode.querySelectorAll("button").forEach(b=>b.classList.toggle("on",b===t));return}
   if(t.id==="val"){draft.note=$("#note").value.trim();
+    if(cur==="V"){const m=num($("#f-vd")&&$("#f-vd").value);
+      if(!(m&&m>=600&&m<=2500)&&!confirm("Distance absente ou hors de 600–2500 m : ta VMA ne sera pas mise à jour. Valider quand même ?"))return;}
     if(ACT[cur].kind==="gym"&&isHome()){
       const miss=exList(cur).filter(x=>!draft.fb[x.id]).length;
       if(miss&&!confirm(miss+" exercice(s) sans ressenti : leur charge ne sera pas adaptée. Valider quand même ?"))return;}
