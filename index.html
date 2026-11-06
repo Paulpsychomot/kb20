@@ -62,6 +62,11 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;min-he
 .bigl{font-size:104px;font-weight:900;line-height:.78;letter-spacing:-5px;padding-bottom:4px}
 .scard .fl{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;opacity:.8}
 .scard .nm{font-size:24px;font-weight:800;line-height:1.05;margin-top:6px}
+.blk{margin-top:18px}
+.bh{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.bh b{color:var(--fc)}
+.bh .btn{width:auto;flex:none;padding:0 14px}
+.addp{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .seg{display:flex;background:var(--card);border-radius:12px;padding:3px;gap:3px;margin-top:10px}
 .seg button{flex:1;border-radius:10px;min-height:42px;font-weight:800;color:var(--text)}
 .seg button.on{background:var(--fc);color:var(--fi)}
@@ -182,9 +187,9 @@ const SES={
  L:{gym:[],
   home:[
    K("lh1","Goblet squat, descente lente (3 s)",4,8,reps,20,1,{leg:1}),
+   K("lh6","Rowing en appui sur banc",4,10,arm,20,1),
    K("lh9","Clean & press",3,6,arm,12,1),
    K("lh2","Fente bulgare, KB en rack",3,8,leg,12,1,{leg:1}),
-   K("lh6","Rowing en appui sur banc",3,10,arm,20,1),
    K("lh3","Soulevé de terre roumain sur une jambe",3,8,side,12,1,{leg:1}),
    K("lh5","Développé au sol (floor press)",3,10,arm,12,1),
    K("lh7","Mollets unilatéraux sur marche",3,12,leg,20,2,{leg:1}),
@@ -259,7 +264,9 @@ const fromYmd=s=>{const[a,b,c]=s.split("-").map(Number);return new Date(a,b-1,c)
 const mmss=s=>pad(Math.floor(s/60))+":"+pad(Math.floor(s%60));
 const num=v=>{const n=parseFloat(String(v).replace(",","."));return isFinite(n)?n:null};
 function weekStart(d){const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());x.setDate(x.getDate()-((x.getDay()+6)%7));return x}
-const exList=l=>SES[l]?SES[l][DB.loc==="home"?"home":"gym"]:[];
+const isHome=()=>((draft&&draft.loc)||DB.loc)==="home";
+const exList=l=>SES[l]?SES[l][isHome()?"home":"gym"]:[];
+const BLK=[{n:"A",rest:90},{n:"B",rest:90},{n:"C",rest:90},{n:"D",rest:60}];
 function exState(ex){
   let s=DB.st[ex.id];
   if(!s){s=ex.gym?{kg:null,easy:0,hard:0,pain:false,msg:""}:{idx:ex.lad?ex.lad.indexOf(ex.def):0,bonus:0,easy:0,hard:0,pain:false,msg:""};DB.st[ex.id]=s}
@@ -279,7 +286,7 @@ const volLabel=ex=>setsOf(ex)+" × "+ex.fmt(ex.n+(ex.gym?0:exState(ex).bonus*ex.
 /* ---------- État de vue ---------- */
 let tab="today",view="main",cur=null;
 let calY=null,calM=null,selDay=null;
-let draft=null;
+let draft=null,backDate=null,addOpen=false;
 
 /* ---------- Sons ---------- */
 let actx=null;
@@ -432,10 +439,14 @@ function renderToday(){
     else{
       pill=`<span class="pill rtTxt">--:--</span>`;
       h+=`<h2>Échauffement · 5 min</h2>${numList(WARM)}
-      <h2>Séance</h2><div class="rows">${exs.map((ex,i)=>{const st=exState(ex);return `
-        <div class="row2"><span class="num">${pad(i+1)}</span>
-          <div class="t"><div class="name">${ex.name}</div><div class="meta">${volLabel(ex)}</div>
-          ${st.msg?`<div class="msg ${st.pain?"pain":""}">${esc(st.msg)}</div>`:""}</div>${loadHTML(ex)}</div>`}).join("")}</div>
+      <h2>Séance · ${Math.ceil(exs.length/2)} blocs</h2>
+      <div class="card tiny">Dans chaque bloc, tu enchaînes les 2 exercices sans pause : 1 série du premier, 1 série du second, puis tu te reposes. Tu recommences jusqu’au dernier tour, et tu ne passes au bloc suivant qu’une fois le bloc terminé.</div>
+      ${[0,1,2,3].filter(b=>exs[b*2]).map(b=>{const pair=exs.slice(b*2,b*2+2),B=BLK[b],tours=Math.max(...pair.map(setsOf));
+        return `<div class="blk"><div class="bh"><div><b>Bloc ${B.n}</b> · ${tours} tours<div class="tiny">${pair.map((_,i)=>B.n+(i+1)).join(" puis ")}, puis ${B.rest} s de repos</div></div><button class="btn sec small" data-rt="${B.rest}">Repos ${B.rest} s</button></div>
+        <div class="rows">${pair.map((ex,i)=>{const st=exState(ex);return `
+          <div class="row2"><span class="num">${B.n}${i+1}</span>
+            <div class="t"><div class="name">${ex.name}</div><div class="meta">${volLabel(ex)}${setsOf(ex)<tours?" · pas au dernier tour":""}</div>
+            ${st.msg?`<div class="msg ${st.pain?"pain":""}">${esc(st.msg)}</div>`:""}</div>${loadHTML(ex)}</div>`}).join("")}</div></div>`}).join("")}
       <div class="tiny" style="margin-top:6px">${ph.k==="base"?"":"Séries ajustées à ta phase trail. "}Touche une charge pour la changer.</div>
       <h2>Repos</h2>
       <div class="live"><div class="bigclock rtTxt">--:--</div></div>
@@ -457,8 +468,9 @@ function renderToday(){
 
 /* ---------- Écran Fin de séance ---------- */
 function renderFinish(){
-  const a=ACT[cur],d=draft;let h=`<button class="back" id="back">‹ Retour</button><h1>${a.name}</h1><p class="sub">Bien joué. On note ce qui s’est passé.</p>`;
-  if(a.kind==="gym"&&DB.loc!=="home"){
+  const a=ACT[cur],d=draft;let h=`<button class="back" id="back">‹ Retour</button><h1>${a.name}</h1><p class="sub">${backDate?"Séance du "+fromYmd(backDate).toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})+" : on l’ajoute à ton historique.":"Bien joué. On note ce qui s’est passé."}</p>`;
+  if(backDate&&a.kind==="gym")h+=`<div class="seg"><button data-dloc="gym" class="${!isHome()?"on":""}">Salle</button><button data-dloc="home" class="${isHome()?"on":""}">Maison (KB)</button></div>`;
+  if(a.kind==="gym"&&!isHome()){
     h+=`<h2>Fatigue</h2><div class="card"><div class="opts">${Object.entries(FAT).map(([k,l])=>`<button class="opt ${d.fat===k?"on":""}" data-fat="${k}" data-f="${k}"><i class="cb"></i>${l}</button>`).join("")}</div></div>`;
   }else if(a.kind==="gym"){
     h+=`<div class="card legend">Facile : j’aurais pu en faire bien plus<br>Bien : 2-3 reps en réserve, technique propre<br>Dur : proche de l’échec ou technique qui se dégrade<br>Douleur : douleur articulaire</div>
@@ -484,20 +496,20 @@ function renderFinish(){
 }
 
 function validate(){
-  const a=ACT[cur],d=draft;
-  const entry={date:ymd(new Date()),ts:Date.now(),letter:cur,note:d.note};
-  if(a.kind==="gym"&&DB.loc!=="home"){
+  const a=ACT[cur],d=draft,home=isHome(),date=backDate||ymd(new Date());
+  const entry={date,ts:backDate?fromYmd(date).getTime()+12*36e5:Date.now(),letter:cur,note:d.note};
+  if(a.kind==="gym"&&!home){
     Object.assign(entry,{fat:d.fat,loc:"gym"});
   }else if(a.kind==="gym"){
     const exs=exList(cur);
     exs.forEach(ex=>{if(d.fb[ex.id])adapt(ex,d.fb[ex.id])});
-    Object.assign(entry,{fb:d.fb,g:d.g,loc:DB.loc,loads:Object.fromEntries(exs.map(e=>[e.id,loadLabel(e)]))});
+    Object.assign(entry,{fb:d.fb,g:d.g,loc:"home",loads:Object.fromEntries(exs.map(e=>[e.id,loadLabel(e)]))});
   }else if(a.kind==="run"){
     Object.assign(entry,{dur:num($("#f-dur")&&$("#f-dur").value),km:num($("#f-km")&&$("#f-km").value),dplus:num($("#f-dp")&&$("#f-dp").value),rpe:d.rpe});
   }
   DB.hist.push(entry);save();
-  chReset();draft=null;cur=null;view="main";tab="cal";
-  const n=new Date();calY=n.getFullYear();calM=n.getMonth();selDay=ymd(n);
+  chReset();draft=null;cur=null;backDate=null;addOpen=false;view="main";tab="cal";
+  const n=fromYmd(date);calY=n.getFullYear();calM=n.getMonth();selDay=date;
   render();
 }
 
@@ -528,7 +540,9 @@ function renderCal(){
   if(selDay){
     const hs=by[selDay]||[];
     detail=`<h2>${fromYmd(selDay).toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})}</h2><div class="card detail">`+
-      (hs.length?hs.map(detailOf).join(""):`<div class="tiny">${selDay>=today?"Prévu : "+TXT[planFor(fromYmd(selDay))]+".":"Aucune séance ce jour-là."}</div>`)+`</div>`;
+      (hs.length?hs.map(detailOf).join(""):`<div class="tiny">${selDay>=today?"Prévu : "+TXT[planFor(fromYmd(selDay))]+".":"Aucune séance ce jour-là."}</div>`)+`</div>`+
+      (selDay<=today?`<button class="btn sec small" data-addpast="1" style="margin-top:10px;justify-content:center">${addOpen?"Annuler":"+ Ajouter une séance ce jour-là"}</button>`+
+        (addOpen?`<div class="addp">${["L","H","Z","Y","F","T","R"].map(l=>`<button class="btn sec small" data-bf="${l}" style="justify-content:center;--fc:${famille(l).c}">${ACT[l].short||ACT[l].name}</button>`).join("")}</div>`:""):"");
   }
   const p=phase();
   $("#app").innerHTML=`<h1>Calendrier</h1>
@@ -565,6 +579,9 @@ document.addEventListener("click",e=>{
   if(d.pick){if((CH.run||CH.base>0)&&!confirm("Changer de séance remet le chrono à zéro. Continuer ?"))return;chReset();cur=d.pick;renderToday();return}
   if(d.loc){DB.loc=d.loc;save();renderToday();return}
   if(d.rt){rtStart(Number(d.rt));return}
+  if(d.addpast){addOpen=!addOpen;renderCal();return}
+  if(d.bf){cur=d.bf;backDate=selDay;chReset();draft={fb:{},g:null,fat:null,rpe:null,note:"",loc:DB.loc};view="finish";render();return}
+  if(d.dloc){draft.note=($("#note")||{value:draft.note}).value;draft.loc=d.dloc;renderFinish();return}
   if(d.ex){const ex=ALLEX[d.ex],st=exState(ex);
     if(ex.gym){const v=prompt("Charge utilisée (kg) — "+ex.name,st.kg==null?"":st.kg);if(v===null)return;const n=num(v);st.kg=n==null||n<0?null:n;st.msg=""}
     else{st.idx=(st.idx+1)%ex.lad.length;st.bonus=0;st.msg=""}
@@ -572,18 +589,18 @@ document.addEventListener("click",e=>{
   if(t.id==="chgo"){beep(660,.06,.01);chToggle();return}
   if(t.id==="chrst"){chReset();return}
   if(t.id==="end"){if(CH.run)chToggle();draft={fb:{},g:null,fat:null,rpe:null,note:""};view="finish";render();return}
-  if(t.id==="back"){view="main";render();return}
+  if(t.id==="back"){if(backDate){backDate=null;cur=null;chReset();draft=null}view="main";render();return}
   if(d.fb){draft.fb[d.fb]=d.f;t.parentNode.querySelectorAll("button").forEach(b=>b.classList.toggle("on",b===t));return}
   if(d.fat){draft.fat=d.fat;t.parentNode.querySelectorAll("button").forEach(b=>b.classList.toggle("on",b===t));return}
   if(d.g){draft.g=Number(d.g);t.parentNode.querySelectorAll("button").forEach(b=>b.classList.toggle("on",b===t));return}
   if(d.rpe){draft.rpe=Number(d.rpe);t.parentNode.querySelectorAll("button").forEach(b=>b.classList.toggle("on",b===t));return}
   if(t.id==="val"){draft.note=$("#note").value.trim();
-    if(ACT[cur].kind==="gym"&&DB.loc==="home"){
+    if(ACT[cur].kind==="gym"&&isHome()){
       const miss=exList(cur).filter(x=>!draft.fb[x.id]).length;
       if(miss&&!confirm(miss+" exercice(s) sans ressenti : leur charge ne sera pas adaptée. Valider quand même ?"))return;}
     validate();return}
   if(d.m){calM+=Number(d.m);if(calM<0){calM=11;calY--}if(calM>11){calM=0;calY++}render();return}
-  if(d.day){selDay=selDay===d.day?null:d.day;renderCal();return}
+  if(d.day){selDay=selDay===d.day?null:d.day;addOpen=false;renderCal();return}
   if(t.id==="exp"){const j=JSON.stringify(DB);(navigator.clipboard?navigator.clipboard.writeText(j):Promise.reject()).then(()=>alert("Export copié."),()=>prompt("Copie ce texte :",j));return}
   if(t.id==="imp"){const j=prompt("Colle ici l’export :");if(!j)return;try{const o=JSON.parse(j);if(!o||!Array.isArray(o.hist))throw 0;DB=Object.assign({hist:[],st:{},loc:"gym",race:null,vma:null},o);save();selDay=null;cur=null;render();alert("Import terminé : "+DB.hist.length+" séances.")}catch(err){alert("Export invalide, rien n’a été modifié.")}return}
   if(t.id==="rz"){if(confirm("Effacer tout l’historique et les charges ?")){DB={hist:[],st:{},loc:"gym",race:null,vma:null};save();selDay=null;cur=null;render()}return}
