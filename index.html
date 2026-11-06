@@ -564,6 +564,9 @@ function renderCal(){
   <h2>Ma VMA</h2>
   <div class="card"><label><div class="tiny">VMA en km/h (facultatif)</div><input class="inp" id="vma" type="number" inputmode="decimal" step="0.1" placeholder="ex. 15" value="${DB.vma||""}"></label>
     <div class="tiny" style="margin-top:8px">Test simple : 6 min à fond sur piste, VMA ≈ distance en mètres ÷ 100 (approximation). Elle règle les vitesses du fractionné.</div></div>
+  <h2>Écran</h2>
+  <div class="card"><div class="week" style="margin:0"><span>Garder l’écran allumé</span><button class="btn sec small" id="awk" style="width:auto;padding:0 16px">${DB.awake===false?"Non":"Oui"}</button></div>
+    <div class="tiny" style="margin-top:8px">${"wakeLock" in navigator?"Tant que l’appli est ouverte au premier plan. Consomme plus de batterie.":"Non pris en charge par cette version d’iOS (il faut iOS 16.4 ou plus)."}</div></div>
   <h2>Données</h2>
   <div class="row"><button class="btn sec small" id="exp">Copier l’export</button><button class="btn sec small" id="imp">Importer</button><button class="btn sec small" id="rz" style="color:#FF6B5E">Réinitialiser</button></div>
   <p class="tiny">Les données restent sur cet iPhone (stockage local de Safari).</p>`;
@@ -608,6 +611,7 @@ document.addEventListener("click",e=>{
     validate();return}
   if(d.m){calM+=Number(d.m);if(calM<0){calM=11;calY--}if(calM>11){calM=0;calY++}render();return}
   if(d.day){selDay=selDay===d.day?null:d.day;addOpen=false;renderCal();return}
+  if(t.id==="awk"){DB.awake=DB.awake===false;save();wake();renderCal();return}
   if(t.id==="exp"){const j=JSON.stringify(DB);(navigator.clipboard?navigator.clipboard.writeText(j):Promise.reject()).then(()=>alert("Export copié."),()=>prompt("Copie ce texte :",j));return}
   if(t.id==="imp"){const j=prompt("Colle ici l’export :");if(!j)return;try{const o=JSON.parse(j);if(!o||!Array.isArray(o.hist))throw 0;DB=Object.assign({hist:[],st:{},loc:"gym",race:null,vma:null},o);save();selDay=null;cur=null;render();alert("Import terminé : "+DB.hist.length+" séances.")}catch(err){alert("Export invalide, rien n’a été modifié.")}return}
   if(t.id==="rz"){if(confirm("Effacer tout l’historique et les charges ?")){DB={hist:[],st:{},loc:"gym",race:null,vma:null};save();selDay=null;cur=null;render()}return}
@@ -625,6 +629,20 @@ try{
   H.forEach((h,i)=>{g.fillStyle=C[i];g.beginPath();g.roundRect(x0+i*(w+gap),b-h*k,w,h*k,w/2);g.fill()});
   document.querySelector("#touch-icon").href=c.toDataURL("image/png");
 }catch(e){}
+
+/* Écran allumé tant que l'appli est au premier plan (Screen Wake Lock) */
+let WL=null;
+async function wake(){
+  try{
+    if(DB.awake===false){if(WL){WL.release();WL=null}return}
+    if(!("wakeLock" in navigator)||WL||document.visibilityState!=="visible")return;
+    WL=await navigator.wakeLock.request("screen");
+    WL.addEventListener("release",()=>{WL=null});
+  }catch(e){WL=null}
+}
+document.addEventListener("visibilitychange",wake);
+["click","touchstart"].forEach(ev=>document.addEventListener(ev,wake,{passive:true}));
+wake();
 
 render();
 </script>
