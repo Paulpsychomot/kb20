@@ -183,27 +183,27 @@ function isoWeek(d){const x=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.get
 /* samedi : fractionné tant que la course est loin (phase Base), sortie longue ensuite */
 function planFor(d){const l=PLAN[d.getDay()];return l==="T"&&phase().k==="base"?"F":l}
 const ESSENTIAL=["L","H","R"];
-const WARM=["5 min vélo, rameur ou marche rapide","Mobilité hanches, chevilles, épaules","2 séries d’approche sur le 1er exercice"];
+const WARM=["5 min vélo, rameur ou marche rapide","Mobilité hanches, chevilles, épaules","Activation fessiers : 2 × 10 ponts fessiers + 2 × 12 levées de jambe couché sur le côté (droite en premier)","2 séries d’approche sur le 1er exercice"];
 const SES={
  L:{gym:[],
   home:[
-   K("lh1","Goblet squat, descente lente (3 s)",4,8,reps,20,1,{leg:1}),
+   K("lh1","Goblet squat, descente lente (3 s)",4,8,reps,20,1,{leg:1,tip:"Amplitude sans gêne : arrête-toi avant que la fesse droite tire"}),
    K("lh6","Rowing en appui sur banc",4,10,arm,20,1),
    K("lh9","Clean & press",3,6,arm,12,1),
-   K("lh2","Fente bulgare, KB en rack",3,8,leg,12,1,{leg:1}),
-   K("lh3","Soulevé de terre roumain sur une jambe",3,8,side,12,1,{leg:1}),
+   K("lh4","Pont fessier sur une jambe, KB sur le bassin",3,10,side,12,1,{leg:1,tip:"Côté droit en premier. Pousse dans le talon, bassin à plat, serre la fesse 1 s en haut"}),
+   K("lh3","Soulevé de terre roumain sur une jambe",3,8,side,12,1,{leg:1,tip:"Côté droit en premier. Bassin aligné, fesse qui travaille, dos plat"}),
    K("lh5","Développé au sol (floor press)",3,10,arm,12,1),
-   K("lh7","Mollets unilatéraux sur marche",3,12,leg,20,2,{leg:1}),
+   BW("lh10","Planche latérale, levée de la jambe du dessus",3,20,secS,5,{tip:"Côté droit en premier. Fesse moyenne : monte la jambe sans faire tourner le bassin"}),
    K("lh8","Hollow hold, KB bras tendus",3,30,sec,8,5)]},
  H:{gym:[],
   home:[
    K("hh1","Clean & press",4,6,arm,12,1),
    K("hh2","Rowing en appui sur banc",4,8,arm,20,1),
    K("hh3","Développé au sol (floor press)",3,10,arm,12,1),
-   K("hh6","Goblet squat (jambes légères)",3,10,reps,12,1,{leg:1}),
+   K("hh8","Hip thrust, dos sur banc ou canapé, KB sur le bassin",3,10,reps,20,2,{leg:1,tip:"Pousse dans les talons, serre les fessiers 1 s en haut, genoux dans l’axe"}),
    K("hh4","Curl marteau",3,12,arm,8,1),
    K("hh5","Extension triceps au-dessus de la tête",3,12,reps,12,1),
-   K("hh9","Step-up, KB en rack (jambes légères)",3,8,leg,12,1,{leg:1}),
+   K("hh9","Step-up, KB en rack (jambes légères)",3,8,leg,12,1,{leg:1,tip:"Marche modérée, genou dans l’axe du pied. Commence par la jambe droite"}),
    K("hh7","Suitcase hold",3,30,secS,12,5)]}
 };
 const ALLEX=Object.fromEntries(Object.values(SES).flatMap(x=>[...x.gym,...x.home]).map(e=>[e.id,e]));
@@ -442,12 +442,12 @@ function renderToday(){
       pill=`<span class="pill rtTxt">--:--</span>`;
       h+=`<h2>Échauffement · 5 min</h2>${numList(WARM)}
       <h2>Séance · ${Math.ceil(exs.length/2)} blocs</h2>
-      <div class="card tiny">Dans chaque bloc, tu enchaînes les 2 exercices sans pause : 1 série du premier, 1 série du second, puis tu te reposes. Tu recommences jusqu’au dernier tour, et tu ne passes au bloc suivant qu’une fois le bloc terminé.</div>
+      <div class="card tiny">Dans chaque bloc, tu enchaînes les 2 exercices sans pause : 1 série du premier, 1 série du second, puis tu te reposes. Tu recommences jusqu’au dernier tour, et tu ne passes au bloc suivant qu’une fois le bloc terminé.<br>Le bas du corps est orienté fessiers et stabilité de hanche (gêne côté droit) : si une douleur apparaît, note « Douleur » : l’app baisse la charge.</div>
       ${[0,1,2,3].filter(b=>exs[b*2]).map(b=>{const pair=exs.slice(b*2,b*2+2),B=BLK[b],tours=Math.max(...pair.map(setsOf));
         return `<div class="blk"><div class="bh"><div><b>Bloc ${B.n}</b> · ${tours} tours<div class="tiny">${pair.map((_,i)=>B.n+(i+1)).join(" puis ")}, puis ${B.rest} s de repos</div></div><button class="btn sec small" data-rt="${B.rest}">Repos ${B.rest} s</button></div>
         <div class="rows">${pair.map((ex,i)=>{const st=exState(ex);return `
           <div class="row2"><span class="num">${B.n}${i+1}</span>
-            <div class="t"><div class="name">${ex.name}</div><div class="meta">${volLabel(ex)}${setsOf(ex)<tours?" · pas au dernier tour":""}</div>
+            <div class="t"><div class="name">${ex.name}</div><div class="meta">${volLabel(ex)}${setsOf(ex)<tours?" · pas au dernier tour":""}</div>${ex.tip?`<div class="tiny">${ex.tip}</div>`:""}
             ${st.msg?`<div class="msg ${st.pain?"pain":""}">${esc(st.msg)}</div>`:""}</div>${loadHTML(ex)}</div>`}).join("")}</div></div>`}).join("")}
       <div class="tiny" style="margin-top:6px">${ph.k==="base"?"":"Séries ajustées à ta phase trail. "}Touche une charge pour la changer.</div>
       <h2>Repos</h2>
