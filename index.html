@@ -216,9 +216,9 @@ const FB={easy:"Facile",good:"Bien",hard:"Dur",pain:"Douleur"};
 const DEFDUR={Z:50,Y:50,T:120,F:60,V:45,R:60,M:15};
 
 const FRAC=[
-  {n:10,work:"30 s",pct:105,rec:"30 s de trot lent",name:"30 / 30"},
-  {n:8,work:"1 min",pct:100,rec:"1 min de trot",name:"1 min"},
-  {n:6,work:"2 min",pct:95,rec:"1 min 30 de trot",name:"2 min"},
+  {n:8,work:"30 s",pct:105,rec:"30 s de trot lent",name:"30 / 30"},
+  {n:6,work:"1 min",pct:100,rec:"1 min de trot",name:"1 min"},
+  {n:5,work:"2 min",pct:95,rec:"1 min 30 de trot",name:"2 min"},
   {n:4,work:"3 min",pct:90,rec:"2 min de trot",name:"3 min, semaine allégée"}];
 const pace=v=>{const m=60/v;return Math.floor(m)+":"+pad(Math.round((m-Math.floor(m))*60)%60)};
 function fracBase(){
@@ -228,10 +228,14 @@ function fracBase(){
     `${f.n} × ${f.work} à ${f.pct} % de ta VMA${eff}, récup : ${f.rec}`,
     "En côte (4–6 %) possible : même effort, récup en redescendant",
     "Retour au calme 10 min",
-    `Cycle de 4 semaines : 30/30 → 1 min → 2 min → 3 min (allégée). Cette semaine : ${f.name}. Garde 48 h minimum avec le rugby.`+(DB.vma?"":" Renseigne ta VMA dans le calendrier pour avoir les vitesses.")];
+    `Cycle de 4 semaines : 30/30 → 1 min → 2 min → 3 min (allégée). Volume de reprise : ajoute 1 ou 2 répétitions quand c’est facile. Cette semaine : ${f.name}. Garde 48 h minimum avec le rugby.`+(DB.vma?"":" Renseigne ta VMA dans le calendrier pour avoir les vitesses.")];
+}
+function longTarget(){
+  const l=DB.hist.filter(h=>h.letter==="T"&&h.dur).sort((a,b)=>a.ts-b.ts).pop();
+  return l?{last:l.dur,min:Math.max(45,Math.min(150,Math.round(l.dur*1.1/5)*5))}:{last:null,min:60};
 }
 function runLines(l,ph){
-  if(l==="Z")return["45–60 min en aisance respiratoire : tu peux parler en phrases (≈ 65–75 % FC max)","Terrain vallonné si possible, marche dans les raidillons","Option : 4 à 6 lignes droites de 20 s en fin de sortie"];
+  if(l==="Z")return["45–60 min en aisance respiratoire : tu peux parler en phrases. Repère : FC 120–150 bpm, allure ≈ 5:40–6:35 /km sur le plat (zone 2 de Strava)","Terrain vallonné si possible, marche dans les raidillons","Option : 4 à 6 lignes droites de 20 s en fin de sortie"];
   if(l==="Y")return["Séance Hyrox en salle avec ton coach","Pas de salle ? Fais plutôt une sortie zone 2"];
   if(l==="F"){
     if(ph.k==="spe")return["Échauffement 15 min en footing + gammes","3 × 15 à 20 min à allure course sur un terrain proche de ta course, récup 5 min","Retour au calme 10 min"];
@@ -243,7 +247,8 @@ function runLines(l,ph){
   if(l==="T"){
     if(ph.k==="spe")return["Sortie longue 3 à 5 h avec un dénivelé proche de ta course","Travaille la nutrition (60–90 g de glucides/h) et les descentes","Option : dos à dos, samedi long + dimanche 1 h – 1 h 30 facile"];
     if(ph.k==="aff")return["Sortie ≤ 1 h 30 à allure course, sensations fraîches","Rien de nouveau, pas de fatigue en plus"];
-    return["Sortie longue 1 h 30 – 2 h 30 en endurance (zone 2), +10 % maximum d’une semaine à l’autre","Une semaine sur 4 plus légère (−30 %)","Teste sac, bâtons et ravitaillement"];
+    const lt=longTarget();
+    return[`Sortie longue ${lt.min} min en zone 2 (FC 120–150 bpm), ${lt.last?"+10 % sur ta dernière ("+lt.last+" min)":"reprise : on repart de 60 min"}, puis +10 % maximum d’une semaine à l’autre`,"Une semaine sur 4 plus légère (−30 %)","Teste sac, bâtons et ravitaillement"];
   }
   return["Jour de repos : rien d’obligatoire","Option : 10–15 min de mobilité (hanches, chevilles, épaules) ou marche facile","Sommeil et hydratation"];
 }
