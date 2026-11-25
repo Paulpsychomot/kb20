@@ -67,6 +67,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;min-he
 .bh b{color:var(--fc)}
 .bh .btn{width:auto;flex:none;padding:0 14px}
 .addp{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.s4 button{font-size:13px;padding:0 2px}
 .seg{display:flex;background:var(--card);border-radius:12px;padding:3px;gap:3px;margin-top:10px}
 .seg button{flex:1;border-radius:10px;min-height:42px;font-weight:800;color:var(--text)}
 .seg button.on{background:var(--fc);color:var(--fi)}
@@ -172,16 +173,23 @@ const ACT={
   T:{name:"Séance de course · trail",short:"Trail",kind:"run",sub:"Samedi : sortie longue"},
   F:{name:"Fractionné",short:"Frac.",kind:"run",sub:"Qualité : une séance dure par semaine"},
   V:{name:"Test VMA",short:"VMA",kind:"run",sub:"Test des 6 minutes pour calculer ta VMA"},
+  B:{name:"Sortie vélo",short:"Vélo",kind:"run",sub:"Samedi : sortie vélo (objectif vélo)"},
   R:{name:"Rugby",short:"Rugby",kind:"run",sub:"1 h de course / cardio"},
   M:{name:"Repos",short:"Repos",kind:"light",sub:"Récupération · mobilité facultative"}
 };
 const LEG={A:"Jambes & core (KB 20 min)",B:"Bras & core (KB 20 min)",C:"Trail & stabilité (KB 20 min)"};
 const PLAN={1:"L",2:"Z",3:"M",4:"R",5:"H",6:"T",0:"M"};      // jour de semaine → séance prévue
-const TXT={L:"Renfo salle ou KB",Z:"Course ou Hyrox",M:"Repos",R:"Rugby",H:"Renfo salle ou maison",T:"Sortie longue",F:"Fractionné",V:"Test VMA"};
-const LBL={L:"L",Z:"Z/Y",R:"R",H:"H",T:"T",F:"F"};
+const TXT={L:"Renfo salle ou KB",Z:"Course ou Hyrox",M:"Repos",R:"Rugby",H:"Renfo salle ou maison",T:"Sortie longue",F:"Fractionné",V:"Test VMA",B:"Sortie vélo"};
+const LBL={L:"L",Z:"Z/Y",R:"R",H:"H",T:"T",F:"F",B:"B"};
 function isoWeek(d){const x=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())),n=x.getUTCDay()||7;x.setUTCDate(x.getUTCDate()+4-n);return Math.ceil(((x-Date.UTC(x.getUTCFullYear(),0,1))/864e5+1)/7)}
-/* samedi : fractionné tant que la course est loin (phase Base), sortie longue ensuite */
-function planFor(d){const l=PLAN[d.getDay()];return l==="T"&&phase().k==="base"?"F":l}
+/* samedi : fractionné en phase Base, sortie longue ensuite, vélo quand l'objectif est à vélo */
+function planFor(d){
+  const l=PLAN[d.getDay()];if(l!=="T")return l;
+  const p=phase(d);
+  if(p.k==="base")return"F";
+  if(p.lv==="velo"&&(p.k==="spe"||p.k==="aff"))return"B";
+  return"T";
+}
 const ESSENTIAL=["L","H","R"];
 const WARM=["5 min vélo, rameur ou marche rapide","Mobilité hanches, chevilles, épaules","Activation fessiers : 2 × 10 ponts fessiers + 2 × 12 levées de jambe couché sur le côté (droite en premier)","2 séries d’approche sur le 1er exercice"];
 const SES={
@@ -209,11 +217,11 @@ const SES={
 const ALLEX=Object.fromEntries(Object.values(SES).flatMap(x=>[...x.gym,...x.home]).map(e=>[e.id,e]));
 const FAT={fresh:"Frais",ok:"Normal",tired:"Fatigué",pain:"Douleur"};
 const FAM={force:{c:"#E8708F",ink:"#1E0F14",label:"FORCE"},endu:{c:"#5FB4E0",ink:"#0C1A24",label:"ENDURANCE"},rugby:{c:"#E6C65E",ink:"#201A08",label:"RUGBY"},repos:{c:"#7E8B9C",ink:"#101418",label:"REPOS"}};
-const FAMOF={L:"force",H:"force",A:"force",B:"force",C:"force",Z:"endu",Y:"endu",T:"endu",F:"endu",V:"endu",R:"rugby",M:"repos"};
+const FAMOF={L:"force",H:"force",A:"force",B:"force",C:"force",Z:"endu",Y:"endu",T:"endu",F:"endu",V:"endu",B:"endu",R:"rugby",M:"repos"};
 const famille=code=>FAM[FAMOF[code]||"force"];
 const famStyle=code=>{const f=famille(code);return `--fc:${f.c};--fi:${f.ink}`};
 const FB={easy:"Facile",good:"Bien",hard:"Dur",pain:"Douleur"};
-const DEFDUR={Z:50,Y:50,T:120,F:60,V:45,R:60,M:15};
+const DEFDUR={Z:50,Y:50,T:120,F:60,V:45,B:120,R:60,M:15};
 
 const FRAC=[
   {n:8,work:"30 s",pct:105,rec:"30 s de trot lent",name:"30 / 30"},
@@ -230,35 +238,80 @@ function fracBase(){
     "Retour au calme 10 min",
     `Cycle de 4 semaines : 30/30 → 1 min → 2 min → 3 min (allégée). Volume de reprise : ajoute 1 ou 2 répétitions quand c’est facile. Cette semaine : ${f.name}. Garde 48 h minimum avec le rugby.`+(DB.vma?"":" Renseigne ta VMA dans le calendrier pour avoir les vitesses.")];
 }
-function longTarget(){
+function longTarget(cap=150){
   const l=DB.hist.filter(h=>h.letter==="T"&&h.dur).sort((a,b)=>a.ts-b.ts).pop();
-  return l?{last:l.dur,min:Math.max(45,Math.min(150,Math.round(l.dur*1.1/5)*5))}:{last:null,min:60};
+  return l?{last:l.dur,min:Math.max(45,Math.min(cap,Math.round(l.dur*1.1/5)*5))}:{last:null,min:60};
 }
 function runLines(l,ph){
-  if(l==="Z")return["45–60 min en aisance respiratoire : tu peux parler en phrases. Repère : FC 120–150 bpm, allure ≈ 5:40–6:35 /km sur le plat (zone 2 de Strava)","Terrain vallonné si possible, marche dans les raidillons","Option : 4 à 6 lignes droites de 20 s en fin de sortie"];
+  if(l==="Z")return["45–60 min en aisance respiratoire : tu peux parler en phrases. Repère : FC 120–150 bpm, allure ≈ 5:40–6:35 /km sur le plat (zone 2 de Strava)",ph.lv==="velo"&&ph.k!=="base"?"À vélo, c’est très bien aussi : même effort, durée +30 %":"Terrain vallonné si possible, marche dans les raidillons","Option : 4 à 6 lignes droites de 20 s en fin de sortie"];
   if(l==="Y")return["Séance Hyrox en salle avec ton coach","Pas de salle ? Fais plutôt une sortie zone 2"];
   if(l==="F"){
+    if(ph.k==="rec")return["Pas de fractionné cette semaine : sortie facile 30 à 45 min si tu en as envie","Reprise normale la semaine suivante"];
+    if(ph.k==="spe"&&ph.lv==="ultra")return["Échauffement 15 min en footing + gammes","6 à 8 × 3 min en côte soutenue (effort 8/10), redescente en trottinant","Retour au calme 10 min"];
     if(ph.k==="spe")return["Échauffement 15 min en footing + gammes","3 × 15 à 20 min à allure course sur un terrain proche de ta course, récup 5 min","Retour au calme 10 min"];
     if(ph.k==="aff")return["Échauffement 15 min en footing + gammes","4 à 6 × 2 min à allure course, récup 2 min : juste pour garder les jambes vives","Retour au calme 10 min"];
     return fracBase();
   }
   if(l==="V")return["Échauffement 15 à 20 min en footing progressif + 3 accélérations de 20 s, puis 5 min de récupération","Test : cours 6 minutes le plus loin possible, à allure régulière (ne pars pas trop vite), sur terrain plat ou sur piste","Note la distance parcourue (montre ou piste) : VMA en km/h = distance en mètres ÷ 100","Retour au calme 10 min. Prévois une séance facile la veille.","Entre la distance en validant la séance : l’app calcule ta VMA et met à jour les vitesses du fractionné."];
   if(l==="R")return["1 h de course / cardio avec l’équipe","Pas de jambes lourdes la veille ni le jour même","Note l’intensité (RPE) pour ajuster la fin de semaine"];
+  if(l==="B"){
+    if(ph.k==="rec")return["Sortie vélo très facile 45 min, cadence souple","Aucune intensité : c’est de la récupération"];
+    if(ph.lv==="velo"&&ph.k==="aff")return["Semaine de course : 1 h de vélo facile avec 3 accélérations de 30 s, veille ou avant-veille","Vérifie le vélo, la nourriture et l’heure de départ","Rien de nouveau, jambes fraîches"];
+    if(ph.lv==="velo")return[`Sortie vélo ${ph.w>=4?"2 h 30":ph.w===3?"3 h":"3 h à 3 h 30"} en zone 2, avec 2 × 15 min soutenues en côte`,"Objectif de la saison : 82 km et 1 500 m de D+. Vise 60 à 80 km et 800 à 1 200 m de D+ sur les plus longues","Mange 60 g de glucides par heure, bois régulièrement, cadence 80–90 tours en montée"];
+    return["Sortie vélo 1 h 30 à 2 h en zone 2 (FC 120–150 bpm), plutôt plat à vallonné","Option : 3 × 5 min en côte, effort soutenu mais pas à fond"];
+  }
   if(l==="T"){
-    if(ph.k==="spe")return["Sortie longue 3 à 5 h avec un dénivelé proche de ta course","Travaille la nutrition (60–90 g de glucides/h) et les descentes","Option : dos à dos, samedi long + dimanche 1 h – 1 h 30 facile"];
-    if(ph.k==="aff")return["Sortie ≤ 1 h 30 à allure course, sensations fraîches","Rien de nouveau, pas de fatigue en plus"];
-    const lt=longTarget();
+    if(ph.k==="rec")return["Sortie facile 30 à 45 min, terrain plat","Rien d’obligatoire : écoute ton corps et fais de la mobilité douce après","Reprise normale la semaine suivante"];
+    if(ph.k==="aff"){
+      if(ph.lv==="ultra"){
+        if(ph.w>=3)return["Sortie longue 2 h 30 à 3 h, allure facile, D+ modéré (volume −40 %)","Garde la nutrition et le matériel de course : dernière répétition générale"];
+        if(ph.w===2)return["Sortie 1 h 30 à 2 h avec quelques passages à allure course","Rien de nouveau, pas de fatigue en plus"];
+        return["Semaine de course : 30 min très faciles avec 3 accélérations de 20 s, la veille ou l’avant-veille","Prépare le sac, la nutrition et l’heure de départ"];
+      }
+      return["Semaine de course : 30 à 40 min très faciles avec 3 accélérations de 20 s, la veille ou l’avant-veille","Prépare le sac, la nutrition et l’heure de départ"];
+    }
+    if(ph.k==="spe"){
+      if(ph.lv==="ultra"){
+        const band=ph.w>=10?"3 h 30 à 4 h 30 avec 1 500 à 2 000 m de D+":ph.w>=7?"4 h 30 à 5 h 30 avec 2 000 à 3 000 m de D+":"5 à 6 h 30 avec 3 000 m de D+ si possible (ta plus grosse sortie, au moins 4 semaines avant la course)";
+        return["Sortie longue "+band,"Travaille la nutrition (60 à 90 g de glucides par heure), les bâtons et les descentes","Option : dos à dos, samedi long + dimanche 1 h 30 facile"];
+      }
+      if(ph.lv==="velo")return["Course facile 45 à 60 min : le gros du week-end va au vélo","Garde les jambes souples pour la sortie vélo"];
+      return[ph.w>=4?"Sortie 2 h à 2 h 30 avec 800 à 1 000 m de D+, les 30 dernières minutes à allure course":"Générale : 2 h 30 à 3 h avec 1 000 à 1 200 m de D+ (≈ 18 à 22 km), allure course en montée et en descente","Teste le sac, le ravitaillement et les chaussures"];
+    }
+    const lt=longTarget(ph.lv==="ultra"?240:150);
     return[`Sortie longue ${lt.min} min en zone 2 (FC 120–150 bpm), ${lt.last?"+10 % sur ta dernière ("+lt.last+" min)":"reprise : on repart de 60 min"}, puis +10 % maximum d’une semaine à l’autre`,"Une semaine sur 4 plus légère (−30 %)","Teste sac, bâtons et ravitaillement"];
   }
   return["Jour de repos : rien d’obligatoire","Option : 10–15 min de mobilité (hanches, chevilles, épaules) ou marche facile","Sommeil et hydratation"];
 }
+
+/* ---------- Objectifs de la saison ---------- */
+const DEFGOALS=()=>[
+  {id:"g1",name:"Trail 27 km",date:"2027-04-04",km:27,dplus:1500,kind:"trail"},
+  {id:"g2",name:"Vélo 82 km",date:"2027-04-25",km:82,dplus:1500,kind:"velo"},
+  {id:"g3",name:"Ultra 110 km",date:"2027-10-02",km:110,dplus:5000,kind:"trail"}];
+const lvl=g=>g.kind==="velo"?"velo":(g.km>=60||g.dplus>=3000?"ultra":"trail");
+const GT={ultra:{spe:12,aff:3},trail:{spe:6,aff:1},velo:{spe:4,aff:1}};   // semaines avant l'objectif
+const JALONS=[
+  ["2026-12-20","Fin de reprise (4 semaines)","Régularité : au moins 3 séances par semaine ? Piriforme sans gêne ? Sortie longue de 1 h 15 faite ? Si oui, on monte d’un cran en janvier."],
+  ["2027-01-17","Retest VMA et force","Refais le test des 6 minutes et note tes charges (squat, soulevé de terre). Les allures du fractionné se mettent à jour."],
+  ["2027-02-21","Entrée en spécifique 27 km","Sortie longue de 2 h avec 500 à 600 m de D+ validée ? Sinon on décale la phase de 1 à 2 semaines."],
+  ["2027-03-14","Générale avant le 27 km","18 à 20 km avec 800 m de D+ ou plus. Décide du plan d’affûtage, du matériel et de la nutrition."],
+  ["2027-04-11","Bilan après le 27 km","Récupération, douleurs, jambes. Prépare les sorties vélo des 2 semaines avant les 82 km."],
+  ["2027-05-02","Bilan des 2 courses, départ ultra","Retest VMA, état des jambes et du piriforme. Démarrage du plan de 22 semaines vers l’ultra."],
+  ["2027-06-13","Point ultra n°1","Sortie de 4 h avec 1 500 m de D+ passée ? Piriforme ? Charges de renfo à relever."],
+  ["2027-07-11","Entrée en spécifique ultra","La sortie longue de 4 h 30 passe ? Teste nutrition, sac et bâtons."],
+  ["2027-08-08","Point ultra n°2","Dos à dos (5 h puis 3 h) fait ? Ajuste le plan si fatigue ou douleur."],
+  ["2027-09-05","Dernière grosse sortie","6 h et 3 000 m de D+ au moins 4 semaines avant la course. Après, on réduit."],
+  ["2027-09-12","Début d’affûtage","3 dernières semaines : volume en baisse, rien de nouveau."],
+  ["2027-09-26","Dernier point avant l’ultra","Matériel, plan de nutrition, météo, logistique."]];
+function nextJalons(d=new Date(),n=3){const t=ymd(d);return JALONS.filter(j=>j[0]>=t).slice(0,n)}
 
 /* ---------- Stockage ---------- */
 const KEY="kb20.v1";
 let DB;
 function load(){try{DB=JSON.parse(localStorage.getItem(KEY))}catch(e){DB=null}
   if(!DB||typeof DB!=="object")DB={};
-  DB.hist=DB.hist||[];DB.st=DB.st||{};DB.loc=DB.loc||"gym";DB.race=DB.race||null;DB.vma=DB.vma||null;}
+  DB.hist=DB.hist||[];DB.st=DB.st||{};DB.loc=DB.loc||"gym";DB.race=DB.race||null;DB.vma=DB.vma||null;DB.goals=Array.isArray(DB.goals)?DB.goals:DEFGOALS();}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(DB))}catch(e){}}
 load();
 
@@ -279,14 +332,18 @@ function exState(ex){
   if(!s){s=ex.gym?{kg:null,easy:0,hard:0,pain:false,msg:""}:{idx:ex.lad?ex.lad.indexOf(ex.def):0,bonus:0,easy:0,hard:0,pain:false,msg:""};DB.st[ex.id]=s}
   return s;
 }
-function phase(){
-  if(!DB.race)return{k:"base",w:null};
-  const w=Math.ceil((fromYmd(DB.race)-new Date())/(7*864e5));
-  if(w<0)return{k:"base",w:null};
-  return{k:w<=3?"aff":w<=9?"spe":"base",w};
+function phase(d=new Date()){
+  const t=new Date(d.getFullYear(),d.getMonth(),d.getDate()),gs=[...DB.goals].sort((a,b)=>a.date<b.date?-1:1);
+  const done=gs.filter(g=>{const n=Math.round((t-fromYmd(g.date))/864e5);return n>0&&n<=6}).pop();
+  if(done)return{k:"rec",w:null,goal:done,lv:lvl(done)};
+  const g=gs.find(g=>fromYmd(g.date)>=t);
+  if(!g)return{k:"base",w:null,goal:null,lv:null};
+  const w=Math.ceil((fromYmd(g.date)-t)/(7*864e5)),c=GT[lvl(g)];
+  return{k:w<=c.aff?"aff":w<=c.spe?"spe":"base",w,goal:g,lv:lvl(g)};
 }
-const PH={base:["Base","Force et volume à fond, jambes incluses, + endurance"],spe:["Spécifique","Jambes en maintien (−1 série), priorité aux sorties longues"],aff:["Affûtage","Volume réduit : arrive frais sur la course"]};
-function setsOf(ex){const p=phase().k;if(p==="spe"&&ex.leg)return Math.max(2,ex.sets-1);if(p==="aff")return ex.leg?2:Math.max(2,ex.sets-1);return ex.sets}
+const PH={base:["Base","Force et volume à fond, jambes incluses, + endurance"],spe:["Spécifique","Jambes en maintien (−1 série), priorité aux sorties longues"],aff:["Affûtage","Volume réduit : arrive frais sur la course"],rec:["Récupération","Semaine légère après ta course : tout en facile, jambes au repos"]};
+const phaseLine=p=>p.goal?(p.k==="rec"?" · après "+p.goal.name:" · "+p.goal.name+" dans "+p.w+" sem."):"";
+function setsOf(ex){const p=phase().k;if(p==="rec")return Math.max(2,ex.sets-1);if(p==="spe"&&ex.leg)return Math.max(2,ex.sets-1);if(p==="aff")return ex.leg?2:Math.max(2,ex.sets-1);return ex.sets}
 const loadLabel=ex=>{const s=exState(ex);if(ex.gym)return s.kg==null?"Charge ?":s.kg+" kg";return ex.lad?ex.lad[s.idx]+" kg":"Poids du corps"};
 const volLabel=ex=>setsOf(ex)+" × "+ex.fmt(ex.n+(ex.gym?0:exState(ex).bonus*ex.step));
 
@@ -391,7 +448,7 @@ function streakWeeks(){
 /* ---------- Écran Aujourd'hui ---------- */
 function phaseCard(){
   const p=phase(),[n,t]=PH[p.k];
-  return `<div class="card"><div class="mono" style="color:var(--text)">Phase ${n}${p.w!=null?` · course dans ${p.w} sem.`:""}</div><div class="tiny" style="margin-top:6px">${t}</div></div>`;
+  return `<div class="card"><div class="mono" style="color:var(--text)">Phase ${n}${phaseLine(p)}</div><div class="tiny" style="margin-top:6px">${t}</div></div>`;
 }
 const DOW=["DIM.","LUN.","MAR.","MER.","JEU.","VEN.","SAM."],MON=["JANV","FÉVR","MARS","AVR","MAI","JUIN","JUIL","AOÛT","SEPT","OCT","NOV","DÉC"];
 function loadHTML(ex){
@@ -404,7 +461,7 @@ const numList=lines=>`<div class="rows">${lines.map((t,i)=>`<div class="row2"><s
 function weekBars(planned){
   const ws=weekStart(new Date()),todayS=ymd(new Date());
   const by={};DB.hist.forEach(h=>(by[h.date]=by[h.date]||[]).push(h));
-  const eq=l=>l==="Y"?"Z":l==="T"||l==="F"||l==="V"?"S":l;                    // variantes d'une même case
+  const eq=l=>l==="Y"?"Z":l==="T"||l==="F"||l==="V"||l==="B"?"S":l;                    // variantes d'une même case
   let selIdx=-1;const days=[];
   for(let k=0;k<7;k++){const d=new Date(ws);d.setDate(d.getDate()+k);const key=ymd(d),hs=by[key]||[];
     days.push({key,hs,l:hs.length?hs[0].letter:planFor(d)})}
@@ -419,17 +476,18 @@ function renderToday(){
   if(!cur)cur=planFor(new Date());
   const a=ACT[cur],ph=phase(),now=new Date(),planned=planFor(now),fam=famille(cur);
   const done=DB.hist.some(h=>h.date===ymd(now));
-  const eqT=l=>l==="Y"?"Z":l==="T"||l==="F"||l==="V"?"S":l;
+  const eqT=l=>l==="Y"?"Z":l==="T"||l==="F"||l==="V"||l==="B"?"S":l;
   const jobDone=DB.hist.some(h=>h.date===ymd(now)&&eqT(h.letter)===eqT(cur));
   const miss=missed();
   const wk=weekHist(),bonus=wk.filter(x=>!ESSENTIAL.includes(x.letter)&&x.letter!=="M").length;
   const ess=ESSENTIAL.filter(l=>wk.some(x=>x.letter===l)).length;
-  const jx=DB.race?Math.ceil((fromYmd(DB.race)-new Date(now.getFullYear(),now.getMonth(),now.getDate()))/864e5):null;
+  const jx=ph.goal&&ph.k!=="rec"?Math.ceil((fromYmd(ph.goal.date)-new Date(now.getFullYear(),now.getMonth(),now.getDate()))/864e5):null;
   const seg=a.kind==="gym"
     ?`<div class="seg"><button data-loc="gym" class="${DB.loc!=="home"?"on":""}">Salle</button><button data-loc="home" class="${DB.loc==="home"?"on":""}">Maison (KB)</button></div>`
     :cur==="Z"||cur==="Y"?`<div class="seg"><button data-pick="Z" class="${cur==="Z"?"on":""}">Course</button><button data-pick="Y" class="${cur==="Y"?"on":""}">Hyrox</button></div>`
-    :cur==="T"||cur==="F"||cur==="V"?`<div class="seg"><button data-pick="F" class="${cur==="F"?"on":""}">Fractionné</button><button data-pick="T" class="${cur==="T"?"on":""}">Sortie longue</button><button data-pick="V" class="${cur==="V"?"on":""}">Test VMA</button></div>`:"";
-  const ESSN={L:"Renfo 1",H:"Renfo 2",R:"Rugby"};
+    :cur==="T"||cur==="F"||cur==="V"||cur==="B"?`<div class="seg s4"><button data-pick="F" class="${cur==="F"?"on":""}">Fractionné</button><button data-pick="T" class="${cur==="T"?"on":""}">Longue</button><button data-pick="B" class="${cur==="B"?"on":""}">Vélo</button><button data-pick="V" class="${cur==="V"?"on":""}">Test VMA</button></div>`:"";
+  const jalonCard=d=>{const j=nextJalons(d,1)[0];if(!j)return"";const n=Math.round((fromYmd(j[0])-new Date(d.getFullYear(),d.getMonth(),d.getDate()))/864e5);
+    return n>7?"":`<div class="card" style="margin-top:12px"><div class="mono" style="color:var(--text)">Point de situation · ${n===0?"aujourd’hui":"dans "+n+" j"}</div><div style="font-weight:700;margin-top:4px">${j[1]}</div><div class="tiny" style="margin-top:4px">${j[2]}</div><div class="tiny" style="margin-top:6px">Demande un bilan Strava à Claude pour faire le point.</div></div>`};
   let h=`<div class="fam" style="${famStyle(cur)}">
     <div class="topline mono"><span>${DOW[now.getDay()]} ${now.getDate()} ${MON[now.getMonth()]}</span><span>PHASE ${PH[ph.k][0].toUpperCase()}${jx!=null&&jx>=0?` · J-${jx}`:""}</span></div>
     ${weekBars(planned)}
@@ -437,7 +495,7 @@ function renderToday(){
     ${seg}
     ${jobDone?`<div class="card jobdone"><div class="jd">Job done</div><div class="sub">Séance validée aujourd’hui. Repose-toi, c’est du solide.</div></div>`:""}
     ${miss&&miss!==cur?`<div class="card" style="margin-top:12px"><b>${ACT[miss].name}</b> n’a pas encore été faite cette semaine.<button class="btn small fam-btn" data-pick="${miss}" style="margin-top:10px">La faire aujourd’hui</button></div>`:""}
-    <div class="card" style="margin-top:12px"><div class="mono" style="color:var(--text)">Phase ${PH[ph.k][0]}${ph.w!=null?` · course dans ${ph.w} sem.`:""}</div><div class="tiny" style="margin-top:6px">${PH[ph.k][1]}</div></div>`;
+    <div class="card" style="margin-top:12px"><div class="mono" style="color:var(--text)">Phase ${PH[ph.k][0]}${phaseLine(ph)}</div><div class="tiny" style="margin-top:6px">${PH[ph.k][1]}</div></div>${jalonCard(now)}`;
   let pill="";
   if(a.kind==="gym"){
     const exs=exList(cur),home=DB.loc==="home";
@@ -492,7 +550,7 @@ function renderFinish(){
     h+=`<div class="card"><div class="row" style="gap:10px">
       <label style="flex:1"><div class="tiny">Durée (min)</div><input class="inp" id="f-dur" type="number" inputmode="decimal" value="${dur>=60?Math.round(dur/60):DEFDUR[cur]}"></label>
       ${cur==="V"?`<label style="flex:1"><div class="tiny">Distance en 6 min (m)</div><input class="inp" id="f-vd" type="number" inputmode="numeric" placeholder="ex. 1500"></label>`:cur==="Y"?"":`<label style="flex:1"><div class="tiny">Distance (km)</div><input class="inp" id="f-km" type="number" inputmode="decimal" placeholder="—"></label>`}
-      ${cur==="T"||cur==="Z"||cur==="F"?`<label style="flex:1"><div class="tiny">D+ (m)</div><input class="inp" id="f-dp" type="number" inputmode="numeric" placeholder="—"></label>`:""}</div></div>
+      ${cur==="T"||cur==="Z"||cur==="F"||cur==="B"?`<label style="flex:1"><div class="tiny">D+ (m)</div><input class="inp" id="f-dp" type="number" inputmode="numeric" placeholder="—"></label>`:""}</div></div>
     <h2>Intensité ressentie (1 à 10)</h2>
     <div class="card"><div class="rpe">${[1,2,3,4,5,6,7,8,9,10].map(n=>`<button data-rpe="${n}" class="${d.rpe===n?"on":""}">${n}</button>`).join("")}</div>
       <div class="tiny" style="margin-top:6px">3–4 = facile (zone 2) · 6–7 = soutenu · 9–10 = à fond</div></div>`;
@@ -532,6 +590,11 @@ function detailOf(h){
   const fb=h.fb?Object.entries(h.fb).filter(([id])=>ALLEX[id]).map(([id,f])=>`${esc(ALLEX[id].name.split(/[,(]/)[0].trim())} : ${FB[f].toLowerCase()}`).join(" · "):"";
   return `<div><b>${esc(name)}</b>${x.length?" · "+x.join(" · "):""}${fb?`<div class="tiny">${fb}</div>`:""}${h.note?`<div class="tiny">Note : ${esc(h.note)}</div>`:""}</div>`;
 }
+function goalsHTML(){
+  const t=new Date(),t0=new Date(t.getFullYear(),t.getMonth(),t.getDate());
+  return [...DB.goals].sort((a,b)=>a.date<b.date?-1:1).map(g=>{const d=Math.round((fromYmd(g.date)-t0)/864e5);
+    return `<div class="week"><span><b>${esc(g.name)}</b><div class="tiny">${fromYmd(g.date).toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"})} · ${g.km} km · ${g.dplus} m D+ · ${g.kind==="velo"?"vélo":"trail"}</div></span><span style="display:flex;align-items:center;gap:10px"><b style="white-space:nowrap">${d>=0?"J-"+d:"terminé"}</b><button class="btn sec small" data-gdel="${g.id}" style="width:auto;padding:0 12px" aria-label="Supprimer">×</button></span></div>`}).join("");
+}
 function renderCal(){
   if(calY==null){const n=new Date();calY=n.getFullYear();calM=n.getMonth()}
   const first=new Date(calY,calM,1),days=new Date(calY,calM+1,0).getDate(),off=(first.getDay()+6)%7;
@@ -544,7 +607,7 @@ function renderCal(){
   for(let i=0;i<off;i++)cells+=`<div class="day empty"></div>`;
   for(let d=1;d<=days;d++){
     const k=calY+"-"+pad(calM+1)+"-"+pad(d),hs=by[k]||[];
-    cells+=`<button class="day ${k===today?"today":""} ${k===selDay?"sel":""}" data-day="${k}" style="--sc:${famille(hs.length?hs[0].letter:planFor(fromYmd(k))).c}">${d}${hs.length?`<span class="l">${hs.map(x=>{const f=famille(x.letter);return `<i style="background:${f.c};color:${f.ink}">${x.letter}</i>`}).join("")}</span>`:(k>=today&&LBL[planFor(fromYmd(k))]?`<span class="pl">${LBL[planFor(fromYmd(k))]}</span>`:"")}</button>`;
+    cells+=`<button class="day ${k===today?"today":""} ${k===selDay?"sel":""}" data-day="${k}" style="--sc:${famille(hs.length?hs[0].letter:planFor(fromYmd(k))).c}">${d}${hs.length?`<span class="l">${hs.map(x=>{const f=famille(x.letter);return `<i style="background:${f.c};color:${f.ink}">${x.letter}</i>`}).join("")}</span>`:(DB.goals.some(g=>g.date===k)?`<span class="pl" style="color:var(--brand)">OBJ.</span>`:k>=today&&LBL[planFor(fromYmd(k))]?`<span class="pl">${LBL[planFor(fromYmd(k))]}</span>`:"")}</button>`;
   }
   let detail="";
   if(selDay){
@@ -552,7 +615,7 @@ function renderCal(){
     detail=`<h2>${fromYmd(selDay).toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})}</h2><div class="card detail">`+
       (hs.length?hs.map(detailOf).join(""):`<div class="tiny">${selDay>=today?"Prévu : "+TXT[planFor(fromYmd(selDay))]+".":"Aucune séance ce jour-là."}</div>`)+`</div>`+
       (selDay<=today?`<button class="btn sec small" data-addpast="1" style="margin-top:10px;justify-content:center">${addOpen?"Annuler":"+ Ajouter une séance ce jour-là"}</button>`+
-        (addOpen?`<div class="addp">${["L","H","Z","Y","F","T","V","R"].map(l=>`<button class="btn sec small" data-bf="${l}" style="justify-content:center;--fc:${famille(l).c}">${ACT[l].short||ACT[l].name}</button>`).join("")}</div>`:""):"");
+        (addOpen?`<div class="addp">${["L","H","Z","Y","F","T","B","V","R"].map(l=>`<button class="btn sec small" data-bf="${l}" style="justify-content:center;--fc:${famille(l).c}">${ACT[l].short||ACT[l].name}</button>`).join("")}</div>`:""):"");
   }
   const p=phase();
   $("#app").innerHTML=`<h1>Calendrier</h1>
@@ -563,9 +626,16 @@ function renderCal(){
   <div class="legendf">${Object.values(FAM).map(f=>`<span><i style="background:${f.c}"></i>${f.label}</span>`).join("")}</div>
   <div class="stats"><div class="stat"><b>${DB.hist.length}</b><span>séances au total</span></div><div class="stat"><b>${month}</b><span>ce mois</span></div><div class="stat"><b>${streakWeeks()}</b><span>sem. d’affilée ≥ 3</span></div></div>
   ${detail}
-  <h2>Ma course d’ultra</h2>
-  <div class="card"><label><div class="tiny">Date de la course (facultatif)</div><input class="inp" id="race" type="date" value="${DB.race||""}"></label>
-    <div class="tiny" style="margin-top:8px">${p.w!=null?`Dans ${p.w} semaine${p.w>1?"s":""} · phase ${PH[p.k][0]}. ${PH[p.k][1]}.`:"Sans date, l’app reste en phase Base."}</div></div>
+  <h2>Mes objectifs</h2>
+  ${goalsHTML()}
+  <div class="tiny" style="margin:6px 2px 0">${p.goal?`Phase ${PH[p.k][0]}${phaseLine(p)} — ${PH[p.k][1]}.`:"Aucun objectif à venir : l’app reste en phase Base."}</div>
+  <div class="card" style="margin-top:10px"><div class="tiny">Ajouter un objectif</div>
+    <input class="inp" id="g-name" placeholder="Nom (ex. Trail 50 km)" style="margin-top:6px">
+    <div class="row" style="gap:8px;margin-top:8px"><input class="inp" id="g-date" type="date"><select class="inp" id="g-kind"><option value="trail">Trail</option><option value="velo">Vélo</option></select></div>
+    <div class="row" style="gap:8px;margin-top:8px"><input class="inp" id="g-km" type="number" inputmode="decimal" placeholder="km"><input class="inp" id="g-dp" type="number" inputmode="numeric" placeholder="D+ (m)"></div>
+    <button class="btn sec small" id="gadd" style="margin-top:10px;justify-content:center">Ajouter</button></div>
+  <h2>Points de situation</h2>
+  ${nextJalons(new Date(),3).map(j=>`<div class="card" style="margin-top:8px"><div class="mono" style="color:var(--text)">${fromYmd(j[0]).toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})}</div><div style="font-weight:700;margin-top:4px">${j[1]}</div><div class="tiny" style="margin-top:4px">${j[2]}</div></div>`).join("")||`<div class="tiny">Plus de point prévu.</div>`}
   <h2>Ma VMA</h2>
   <div class="card"><label><div class="tiny">VMA en km/h (facultatif)</div><input class="inp" id="vma" type="number" inputmode="decimal" step="0.1" placeholder="ex. 15" value="${DB.vma||""}"></label>
     <div class="tiny" style="margin-top:8px">Test simple : 6 min à fond sur piste, VMA ≈ distance en mètres ÷ 100 (approximation). Elle règle les vitesses du fractionné.</div></div>
@@ -592,6 +662,10 @@ document.addEventListener("click",e=>{
   if(d.pick){if((CH.run||CH.base>0)&&!confirm("Changer de séance remet le chrono à zéro. Continuer ?"))return;chReset();cur=d.pick;renderToday();return}
   if(d.loc){DB.loc=d.loc;save();renderToday();return}
   if(d.rt){rtStart(Number(d.rt));return}
+  if(d.gdel){if(confirm("Supprimer cet objectif ?")){DB.goals=DB.goals.filter(g=>g.id!==d.gdel);save();renderCal()}return}
+  if(t.id==="gadd"){const nm=$("#g-name").value.trim(),dt=$("#g-date").value;
+    if(!nm||!dt){alert("Donne un nom et une date.");return}
+    DB.goals.push({id:"g"+Date.now(),name:nm,date:dt,km:num($("#g-km").value)||0,dplus:num($("#g-dp").value)||0,kind:$("#g-kind").value});save();renderCal();return}
   if(d.addpast){addOpen=!addOpen;renderCal();return}
   if(d.bf){cur=d.bf;backDate=selDay;chReset();draft={fb:{},g:null,fat:null,rpe:null,note:"",loc:DB.loc};view="finish";render();return}
   if(d.dloc){draft.note=($("#note")||{value:draft.note}).value;draft.loc=d.dloc;renderFinish();return}
@@ -618,10 +692,10 @@ document.addEventListener("click",e=>{
   if(d.day){selDay=selDay===d.day?null:d.day;addOpen=false;renderCal();return}
   if(t.id==="awk"){DB.awake=DB.awake===false;save();wake();renderCal();return}
   if(t.id==="exp"){const j=JSON.stringify(DB);(navigator.clipboard?navigator.clipboard.writeText(j):Promise.reject()).then(()=>alert("Export copié."),()=>prompt("Copie ce texte :",j));return}
-  if(t.id==="imp"){const j=prompt("Colle ici l’export :");if(!j)return;try{const o=JSON.parse(j);if(!o||!Array.isArray(o.hist))throw 0;DB=Object.assign({hist:[],st:{},loc:"gym",race:null,vma:null},o);save();selDay=null;cur=null;render();alert("Import terminé : "+DB.hist.length+" séances.")}catch(err){alert("Export invalide, rien n’a été modifié.")}return}
-  if(t.id==="rz"){if(confirm("Effacer tout l’historique et les charges ?")){DB={hist:[],st:{},loc:"gym",race:null,vma:null};save();selDay=null;cur=null;render()}return}
+  if(t.id==="imp"){const j=prompt("Colle ici l’export :");if(!j)return;try{const o=JSON.parse(j);if(!o||!Array.isArray(o.hist))throw 0;DB=Object.assign({hist:[],st:{},loc:"gym",race:null,vma:null},o);if(!Array.isArray(DB.goals))DB.goals=DEFGOALS();save();selDay=null;cur=null;render();alert("Import terminé : "+DB.hist.length+" séances.")}catch(err){alert("Export invalide, rien n’a été modifié.")}return}
+  if(t.id==="rz"){if(confirm("Effacer tout l’historique et les charges ?")){DB={hist:[],st:{},loc:"gym",race:null,vma:null,goals:DEFGOALS()};save();selDay=null;cur=null;render()}return}
 });
-document.addEventListener("change",e=>{if(e.target.id==="race"){DB.race=e.target.value||null;save();renderCal()}
+document.addEventListener("change",e=>{
   if(e.target.id==="vma"){const v=num(e.target.value);DB.vma=v&&v>=8&&v<=30?v:null;save();renderCal()}});
 
 /* Icône tactile PNG générée (iOS ignore souvent les SVG) */
