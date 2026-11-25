@@ -182,10 +182,21 @@ const PLAN={1:"L",2:"Z",3:"M",4:"R",5:"H",6:"T",0:"M"};      // jour de semaine 
 const TXT={L:"Renfo salle ou KB",Z:"Course ou Hyrox",M:"Repos",R:"Rugby",H:"Renfo salle ou maison",T:"Sortie longue",F:"Fractionné",V:"Test VMA",B:"Sortie vélo"};
 const LBL={L:"L",Z:"Z/Y",R:"R",H:"H",T:"T",F:"F",B:"B"};
 function isoWeek(d){const x=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())),n=x.getUTCDay()||7;x.setUTCDate(x.getUTCDate()+4-n);return Math.ceil(((x-Date.UTC(x.getUTCFullYear(),0,1))/864e5+1)/7)}
-/* samedi : fractionné en phase Base, sortie longue ensuite, vélo quand l'objectif est à vélo */
+/* contexte vélo : prochain objectif vélo et semaines restantes */
+function bikeCtx(d){
+  const t=new Date(d.getFullYear(),d.getMonth(),d.getDate());
+  const g=[...DB.goals].filter(g=>g.kind==="velo"&&fromYmd(g.date)>=t).sort((a,b)=>a.date<b.date?-1:1)[0];
+  return g?{g,wb:Math.ceil((fromYmd(g.date)-t)/(7*864e5))}:null;
+}
+/* créneau d'une séance (variantes d'une même case) : l = lettre, k = jour de semaine 0 = lundi */
+const slot=(l,k)=>l==="Y"?"Z":l==="B"?(k===1?"Z":k===6?"M":"S"):(l==="T"||l==="F"||l==="V")?"S":l;
+/* mardi : course ou vélo (une semaine sur deux, tous les mardis les 4 dernières semaines), dimanche : vélo facultatif,
+   samedi : fractionné en phase Base, sortie longue ensuite, vélo quand l'objectif est à vélo */
 function planFor(d){
-  const l=PLAN[d.getDay()];if(l!=="T")return l;
-  const p=phase(d);
+  const l=PLAN[d.getDay()],bc=bikeCtx(d),p=phase(d);
+  if(l==="Z"&&bc&&p.k!=="rec"&&bc.wb<=12&&(bc.wb<=4||isoWeek(d)%2===1)&&!(p.k==="aff"&&p.lv!=="velo"))return"B";
+  if(l==="M"&&d.getDay()===0&&bc&&(bc.wb===7||bc.wb===5))return"B";
+  if(l!=="T")return l;
   if(p.k==="base")return"F";
   if(p.lv==="velo"&&(p.k==="spe"||p.k==="aff"))return"B";
   return"T";
@@ -242,7 +253,8 @@ function longTarget(cap=150){
   const l=DB.hist.filter(h=>h.letter==="T"&&h.dur).sort((a,b)=>a.ts-b.ts).pop();
   return l?{last:l.dur,min:Math.max(45,Math.min(cap,Math.round(l.dur*1.1/5)*5))}:{last:null,min:60};
 }
-function runLines(l,ph){
+function runLines(l,ph,d=new Date()){
+  if(l==="Z"&&ph.k==="rec")return["Sortie très facile 30 min, ou repos complet","Aucune intensité : c’est de la récupération"];
   if(l==="Z")return["45–60 min en aisance respiratoire : tu peux parler en phrases. Repère : FC 120–150 bpm, allure ≈ 5:40–6:35 /km sur le plat (zone 2 de Strava)",ph.lv==="velo"&&ph.k!=="base"?"À vélo, c’est très bien aussi : même effort, durée +30 %":"Terrain vallonné si possible, marche dans les raidillons","Option : 4 à 6 lignes droites de 20 s en fin de sortie"];
   if(l==="Y")return["Séance Hyrox en salle avec ton coach","Pas de salle ? Fais plutôt une sortie zone 2"];
   if(l==="F"){
@@ -254,6 +266,16 @@ function runLines(l,ph){
   }
   if(l==="V")return["Échauffement 15 à 20 min en footing progressif + 3 accélérations de 20 s, puis 5 min de récupération","Test : cours 6 minutes le plus loin possible, à allure régulière (ne pars pas trop vite), sur terrain plat ou sur piste","Note la distance parcourue (montre ou piste) : VMA en km/h = distance en mètres ÷ 100","Retour au calme 10 min. Prévois une séance facile la veille.","Entre la distance en validant la séance : l’app calcule ta VMA et met à jour les vitesses du fractionné."];
   if(l==="R")return["1 h de course / cardio avec l’équipe","Pas de jambes lourdes la veille ni le jour même","Note l’intensité (RPE) pour ajuster la fin de semaine"];
+  if(l==="B"&&d.getDay()===2){
+    const bc=bikeCtx(d),wb=bc?bc.wb:99;
+    if(ph.k==="rec")return["Sortie vélo très facile 45 min, cadence souple","Aucune intensité : c’est de la récupération"];
+    const main=wb>=9?"Sortie vélo 1 h 30 en zone 2, cadence 85–95 tours":wb>=7?"Sortie vélo 1 h 45 dont 2 × 10 min en côte à effort soutenu (récup 5 min)":wb>=5?"Sortie vélo 2 h dont 3 × 10 min en côte à effort soutenu (récup 5 min)":wb>=3?"Sortie vélo 1 h 30 avec 4 × 5 min à allure course vélo (récup 3 min)":wb===2?"Sortie vélo 1 h 15 avec 3 × 5 min à allure course vélo (récup 3 min)":"Sortie vélo 1 h facile avec 3 accélérations de 30 s";
+    return[main,"Zone 2 : FC ≈ 115–145 bpm (un peu plus basse qu’à pied), tu peux parler en phrases","À alterner avec la course zone 2. Après le renfo jambes du lundi, reste souple"];
+  }
+  if(l==="B"&&d.getDay()===0){
+    const bc=bikeCtx(d),wb=bc?bc.wb:0;
+    return[wb===5?"Sortie vélo 2 h 30 (≈ 55 km, 700 m de D+) en zone 2, avec 2 × 15 min soutenues en côte":"Sortie vélo 2 h (≈ 45 km, 500 m de D+) en zone 2","Facultatif : saute-la si tu es fatigué, si tu as couru long le samedi ou si le piriforme tire","Au-delà de 2 h, mange 60 g de glucides par heure"];
+  }
   if(l==="B"){
     if(ph.k==="rec")return["Sortie vélo très facile 45 min, cadence souple","Aucune intensité : c’est de la récupération"];
     if(ph.lv==="velo"&&ph.k==="aff")return["Semaine de course : 1 h de vélo facile avec 3 accélérations de 30 s, veille ou avant-veille","Vérifie le vélo, la nourriture et l’heure de départ","Rien de nouveau, jambes fraîches"];
@@ -295,6 +317,7 @@ const JALONS=[
   ["2026-12-20","Fin de reprise (4 semaines)","Régularité : au moins 3 séances par semaine ? Piriforme sans gêne ? Sortie longue de 1 h 15 faite ? Si oui, on monte d’un cran en janvier."],
   ["2027-01-17","Retest VMA et force","Refais le test des 6 minutes et note tes charges (squat, soulevé de terre). Les allures du fractionné se mettent à jour."],
   ["2027-02-21","Entrée en spécifique 27 km","Sortie longue de 2 h avec 500 à 600 m de D+ validée ? Sinon on décale la phase de 1 à 2 semaines."],
+  ["2027-03-07","Point vélo","Les sorties vélo de semaine sont faites ? La sortie du dimanche (2 h) passe sans douleur ? Sinon on garde seulement les sorties de semaine."],
   ["2027-03-14","Générale avant le 27 km","18 à 20 km avec 800 m de D+ ou plus. Décide du plan d’affûtage, du matériel et de la nutrition."],
   ["2027-04-11","Bilan après le 27 km","Récupération, douleurs, jambes. Prépare les sorties vélo des 2 semaines avant les 82 km."],
   ["2027-05-02","Bilan des 2 courses, départ ultra","Retest VMA, état des jambes et du piriforme. Démarrage du plan de 22 semaines vers l’ultra."],
@@ -461,11 +484,10 @@ const numList=lines=>`<div class="rows">${lines.map((t,i)=>`<div class="row2"><s
 function weekBars(planned){
   const ws=weekStart(new Date()),todayS=ymd(new Date());
   const by={};DB.hist.forEach(h=>(by[h.date]=by[h.date]||[]).push(h));
-  const eq=l=>l==="Y"?"Z":l==="T"||l==="F"||l==="V"||l==="B"?"S":l;                    // variantes d'une même case
   let selIdx=-1;const days=[];
   for(let k=0;k<7;k++){const d=new Date(ws);d.setDate(d.getDate()+k);const key=ymd(d),hs=by[key]||[];
     days.push({key,hs,l:hs.length?hs[0].letter:planFor(d)})}
-  selIdx=days.findIndex(x=>eq(x.l)===eq(cur));
+  selIdx=days.findIndex((x,k)=>slot(x.l,k)===slot(cur,(new Date().getDay()+6)%7));
   return `<div class="weekbars">${days.map((x,k)=>{
     const f=famille(x.l),done=x.hs.length;
     const dur=x.hs.reduce((a,h)=>a+(h.dur||0),0),hgt=done?Math.round(dur?24+Math.min(dur,120)/120*26:42):24;
@@ -476,15 +498,16 @@ function renderToday(){
   if(!cur)cur=planFor(new Date());
   const a=ACT[cur],ph=phase(),now=new Date(),planned=planFor(now),fam=famille(cur);
   const done=DB.hist.some(h=>h.date===ymd(now));
-  const eqT=l=>l==="Y"?"Z":l==="T"||l==="F"||l==="V"||l==="B"?"S":l;
-  const jobDone=DB.hist.some(h=>h.date===ymd(now)&&eqT(h.letter)===eqT(cur));
+  const k0=(now.getDay()+6)%7;
+  const jobDone=DB.hist.some(h=>h.date===ymd(now)&&slot(h.letter,k0)===slot(cur,k0));
   const miss=missed();
   const wk=weekHist(),bonus=wk.filter(x=>!ESSENTIAL.includes(x.letter)&&x.letter!=="M").length;
   const ess=ESSENTIAL.filter(l=>wk.some(x=>x.letter===l)).length;
   const jx=ph.goal&&ph.k!=="rec"?Math.ceil((fromYmd(ph.goal.date)-new Date(now.getFullYear(),now.getMonth(),now.getDate()))/864e5):null;
   const seg=a.kind==="gym"
     ?`<div class="seg"><button data-loc="gym" class="${DB.loc!=="home"?"on":""}">Salle</button><button data-loc="home" class="${DB.loc==="home"?"on":""}">Maison (KB)</button></div>`
-    :cur==="Z"||cur==="Y"?`<div class="seg"><button data-pick="Z" class="${cur==="Z"?"on":""}">Course</button><button data-pick="Y" class="${cur==="Y"?"on":""}">Hyrox</button></div>`
+    :cur==="Z"||cur==="Y"||(cur==="B"&&now.getDay()===2)?`<div class="seg"><button data-pick="Z" class="${cur==="Z"?"on":""}">Course</button><button data-pick="Y" class="${cur==="Y"?"on":""}">Hyrox</button>${now.getDay()===2?`<button data-pick="B" class="${cur==="B"?"on":""}">Vélo</button>`:""}</div>`
+    :cur==="B"&&now.getDay()===0?""
     :cur==="T"||cur==="F"||cur==="V"||cur==="B"?`<div class="seg s4"><button data-pick="F" class="${cur==="F"?"on":""}">Fractionné</button><button data-pick="T" class="${cur==="T"?"on":""}">Longue</button><button data-pick="B" class="${cur==="B"?"on":""}">Vélo</button><button data-pick="V" class="${cur==="V"?"on":""}">Test VMA</button></div>`:"";
   const jalonCard=d=>{const j=nextJalons(d,1)[0];if(!j)return"";const n=Math.round((fromYmd(j[0])-new Date(d.getFullYear(),d.getMonth(),d.getDate()))/864e5);
     return n>7?"":`<div class="card" style="margin-top:12px"><div class="mono" style="color:var(--text)">Point de situation · ${n===0?"aujourd’hui":"dans "+n+" j"}</div><div style="font-weight:700;margin-top:4px">${j[1]}</div><div class="tiny" style="margin-top:4px">${j[2]}</div><div class="tiny" style="margin-top:6px">Demande un bilan Strava à Claude pour faire le point.</div></div>`};
@@ -518,7 +541,7 @@ function renderToday(){
       <div class="pick" style="margin-top:12px">${[60,90,120,180].map(s=>`<button data-rt="${s}">${s<120?s+" s":s/60+" min"}</button>`).join("")}</div>`;
     }
   }else{
-    h+=`<h2>Au programme</h2>${numList(runLines(cur,ph))}`;
+    h+=`<h2>Au programme</h2>${numList(runLines(cur,ph,now))}`;
     if(a.kind==="run"){
       pill=`<span class="pill chronoTxt">0:00:00</span>`;
       h+=`<h2>Chrono</h2>
